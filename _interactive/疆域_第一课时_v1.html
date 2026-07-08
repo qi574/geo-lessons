@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中国的疆域 · 第一课时 · 地理位置</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --bg-grad: radial-gradient(ellipse at top, #fefefe 0%, #f0ece4 100%);
+    --paper: #ffffff;
+    --panel: rgba(255,255,255,0.75);
+    --border: rgba(40,40,60,0.08);
+    --border-strong: rgba(40,40,60,0.18);
+    --text: #1a1f2e;
+    --text-2: #4a5568;
+    --dim: #8b95a7;
+    --gold: #c08a3e;
+    --gold-soft: #f5e9d4;
+    --blue: #2c7da0;
+    --green: #2d8659;
+    --shadow: 0 4px 20px rgba(40,40,60,0.06);
+    --shadow-hover: 0 12px 32px rgba(40,40,60,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    font-family: 'Microsoft YaHei','PingFang SC','Helvetica Neue',sans-serif;
+    background: var(--bg);
+    background-image: var(--bg-grad);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  body.stage-on { overflow: hidden; }
+
+  /* ====== 顶栏 ====== */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px;
+  }
+  .topbar .brand {
+    font-size: 14px; font-weight: 600;
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+  .topbar .brand .accent { color: var(--gold); }
+  .topbar .topnav {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    flex: 1; justify-content: center; margin: 0 16px;
+  }
+  .topbar .topnav a {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    color: var(--text-2);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+  }
+  .topbar .topnav a:hover {
+    color: var(--gold);
+    background: var(--gold-soft);
+  }
+  .topbar .topnav a.active {
+    color: var(--gold);
+    background: var(--gold-soft);
+    border-color: rgba(192,138,62,0.3);
+  }
+  .mode-toggle {
+    background: var(--gold-soft);
+    color: var(--gold);
+    border: 1px solid rgba(192,138,62,0.3);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+    font-family: inherit;
+  }
+  .mode-toggle:hover { background: var(--gold); color: #fff; }
+  .mode-toggle .ico { margin-right: 4px; }
+
+  /* ====== 阅读模式容器 ====== */
+  .read-mode {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 40px 28px 80px;
+  }
+
+  /* ====== 章节分组 ====== */
+  .section-group { margin-bottom: 56px; }
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+    padding-left: 14px;
+    border-left: 4px solid var(--gold);
+    position: relative;
+  }
+  .section-title .num {
+    display: inline-block;
+    margin-right: 10px;
+    color: var(--gold);
+    font-weight: 800;
+  }
+
+  /* ====== 卡片通用 ====== */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    scroll-margin-top: 90px;
+  }
+  .card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+  }
+  .card .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--gold-soft);
+    color: var(--gold);
+    margin-bottom: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .card .tag.green { background: #e6f4ec; color: var(--green); }
+  .card .tag.blue  { background: #e0eef5; color: var(--blue); }
+  .card h2 {
+    font-size: 20px;
+    color: var(--text);
+    margin-bottom: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .card h3 {
+    font-size: 16px;
+    color: var(--text);
+    margin: 16px 0 8px;
+    font-weight: 600;
+  }
+  .card p {
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.85;
+    margin-bottom: 10px;
+  }
+  .card ul, .card ol {
+    margin: 10px 0 14px 24px;
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.9;
+  }
+  .card ul li::marker { color: var(--gold); }
+  .card strong { color: var(--text); font-weight: 700; }
+  .card .highlight {
+    background: linear-gradient(180deg, transparent 60%, var(--gold-soft) 60%);
+    padding: 0 2px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ====== 封面卡（hero） ====== */
+  .hero-card {
+    background: linear-gradient(135deg, #fdf6ec 0%, #ffffff 60%, #f5e9d4 100%);
+    border: 1px solid rgba(192,138,62,0.18);
+    padding: 56px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 85% 20%, rgba(192,138,62,0.10), transparent 50%),
+      radial-gradient(circle at 15% 80%, rgba(44,125,160,0.08), transparent 50%);
+    pointer-events: none;
+  }
+  .hero-card > * { position: relative; z-index: 1; }
+  .hero-card .badge {
+    display: inline-block;
+    padding: 5px 16px;
+    border: 1px solid rgba(192,138,62,0.3);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+    background: rgba(255,255,255,0.6);
+  }
+  .hero-card h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: 6px;
+    margin-bottom: 12px;
+  }
+  .hero-card h1 .gold { color: var(--gold); }
+  .hero-card h2 {
+    font-size: clamp(16px, 2vw, 20px);
+    color: var(--text-2);
+    font-weight: 500;
+    letter-spacing: 3px;
+    margin-bottom: 28px;
+  }
+  .hero-card .byline {
+    color: var(--dim);
+    font-size: 13px;
+    letter-spacing: 1.5px;
+  }
+  .hero-card .divider {
+    width: 80px; height: 3px;
+    background: var(--gold);
+    border-radius: 2px;
+    margin: 24px auto;
+  }
+
+  /* ====== 演示模式容器 ====== */
+  .stage {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    background-image: var(--bg-grad);
+    z-index: 100;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px 32px 16px;
+  }
+  /* HTML hidden 属性优先级覆盖：保证 .stage 默认隐藏 */
+  .stage[hidden] { display: none !important; }
+  .stage .stage-card {
+    width: 100%;
+    flex: 1;
+    max-height: calc(100vh - 88px);
+    overflow: auto;
+    background: var(--paper);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    padding: 36px 48px;
+    box-shadow: 0 24px 60px rgba(40,40,60,0.15);
+  }
+  .stage .stage-card::-webkit-scrollbar { width: 8px; }
+  .stage .stage-card::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+  /* 内容缩放包装层 — 调试：1366px 宽度时缩 1.0，默认不缩 */
+  .stage-card-inner {
+    width: 1180px;
+    max-width: 100%;
+    margin: 0 auto;       /* 水平居中，缩放后视觉保持居中 */
+    box-sizing: border-box;
+  }
+  .stage-controls {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: 8px 0 4px;
+    flex-shrink: 0;
+  }
+  .stage-controls button {
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    color: var(--text-2);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+  .stage-controls button:hover {
+    background: var(--gold-soft);
+    color: var(--gold);
+    border-color: rgba(192,138,62,0.3);
+  }
+  .stage-controls .page-info {
+    color: var(--dim);
+    font-size: 12px;
+    letter-spacing: 1px;
+    min-width: 80px;
+    text-align: center;
+  }
+  .stage-controls .exit {
+    background: rgba(192,138,62,0.1);
+    color: var(--gold);
+    border-color: rgba(192,138,62,0.3);
+  }
+  .stage-controls .fullscreen {
+    background: rgba(44,125,160,0.1);
+    color: #2c7da0;
+    border-color: rgba(44,125,160,0.3);
+  }
+  .stage-controls .fullscreen:hover {
+    background: #2c7da0;
+    color: #fff;
+  }
+
+  /* ====== 四至点网格 ====== */
+  .four-corners {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 18px 0 22px;
+  }
+  .corner-item {
+    background: linear-gradient(135deg, #fdf6ec 0%, #ffffff 100%);
+    border: 1px solid rgba(192,138,62,0.18);
+    border-radius: 12px;
+    padding: 16px 18px;
+    position: relative;
+    transition: all 0.25s ease;
+  }
+  .corner-item:hover {
+    border-color: var(--gold);
+    box-shadow: 0 6px 20px rgba(192,138,62,0.12);
+    transform: translateY(-2px);
+  }
+  .corner-label {
+    font-size: 12px;
+    color: var(--text-2);
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+  .corner-coord {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .corner-place {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.7;
+  }
+  .corner-place strong { color: var(--text); }
+
+  /* ====== 图片 ====== */
+  .figure {
+    margin: 16px 0 18px;
+    text-align: center;
+  }
+  .figure img {
+    max-width: 100%;
+    max-height: 380px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    background: var(--bg);
+  }
+  .figure-cap {
+    margin-top: 8px !important;
+    font-size: 12px !important;
+    color: var(--dim) !important;
+  }
+
+  /* ====== 一句话总结 ====== */
+  .point-summary {
+    background: linear-gradient(90deg, var(--gold-soft), transparent);
+    border-left: 3px solid var(--gold);
+    padding: 12px 16px !important;
+    border-radius: 0 8px 8px 0;
+    margin-top: 14px !important;
+    font-size: 14px;
+  }
+
+  /* ====== "想一想"黄色云朵 ====== */
+  .think {
+    display: flex;
+    gap: 12px;
+    background: linear-gradient(135deg, #fff8e6 0%, #ffffff 60%);
+    border: 1px dashed rgba(192,138,62,0.4);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-top: 18px;
+    align-items: flex-start;
+  }
+  .think .cloud {
+    font-size: 26px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .think-body { flex: 1; }
+  .think-body p { margin-bottom: 8px !important; }
+  .think-ans {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: rgba(45,134,89,0.08);
+    border-left: 3px solid var(--green);
+    border-radius: 0 6px 6px 0;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .think-ans[hidden] { display: none; }
+
+  /* ====== 通用 reveal 按钮 ====== */
+  .reveal-btn {
+    background: var(--gold-soft);
+    color: var(--gold);
+    border: 1px solid rgba(192,138,62,0.3);
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    margin-top: 4px;
+  }
+  .reveal-btn:hover {
+    background: var(--gold);
+    color: #fff;
+  }
+  .reveal-target[hidden] { display: none; }
+
+  /* ====== 答题选项 ====== */
+  .quiz-card { padding: 24px 28px !important; }
+  .quiz-card .q {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 15px;
+    margin-bottom: 14px !important;
+  }
+  .quiz-card .opts {
+    list-style: none;
+    margin: 0 0 14px 0 !important;
+    padding: 0;
+  }
+  .quiz-card .opt {
+    padding: 10px 16px;
+    margin: 6px 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    color: var(--text-2);
+  }
+  .quiz-card .opt:hover {
+    border-color: var(--gold);
+    background: var(--gold-soft);
+    color: var(--text);
+  }
+  .quiz-card.answered .opt { cursor: default; }
+  .quiz-card .opt-right {
+    background: rgba(45,134,89,0.12) !important;
+    border-color: var(--green) !important;
+    color: var(--green) !important;
+    font-weight: 600;
+  }
+  .quiz-card .opt-wrong {
+    background: rgba(220,80,80,0.10) !important;
+    border-color: rgba(220,80,80,0.4) !important;
+    color: #b14545 !important;
+  }
+  .quiz-explain {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: var(--gold-soft);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.8;
+  }
+  .quiz-explain strong { color: var(--gold); }
+
+  /* ====== 填空题 ====== */
+  .fill-card .fill-q {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 14px !important;
+  }
+  .fill-card .fill-q .blank {
+    display: inline-block;
+    min-width: 60px;
+    border-bottom: 2px solid var(--gold);
+    color: var(--dim);
+    font-style: italic;
+    padding: 0 6px;
+    margin: 0 2px;
+  }
+  .fill-card .fill-ans {
+    margin-top: 10px;
+    padding: 12px 16px;
+    background: rgba(45,134,89,0.08);
+    border-left: 3px solid var(--green);
+    border-radius: 0 6px 6px 0;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.8;
+  }
+  .fill-card .fill-ans[hidden] { display: none; }
+
+  /* ====== 知识树 ====== */
+  .tree {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 14px 0;
+  }
+  .tree-root {
+    text-align: center;
+    font-weight: 700;
+    color: var(--gold);
+    font-size: 16px;
+    padding: 8px;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    background: var(--gold-soft);
+  }
+  .tree-branches {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .tree-branch {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+  .tree-branch .branch-title {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  .tree-branch .branch-detail {
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.7;
+  }
+
+  /* ====== 三国对比网格 ====== */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 18px 0 22px;
+  }
+  .compare-cell {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    text-align: center;
+    transition: all 0.25s ease;
+  }
+  .compare-cell:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+  .compare-cell.highlight-cell {
+    background: linear-gradient(135deg, #fdf6ec 0%, #ffffff 100%);
+    border-color: rgba(192,138,62,0.3);
+    box-shadow: 0 4px 16px rgba(192,138,62,0.08);
+  }
+  .country-flag {
+    font-size: 36px;
+    margin-bottom: 8px;
+  }
+  .country-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .highlight-cell .country-name { color: var(--gold); }
+  .country-desc {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.8;
+    text-align: left;
+  }
+  .country-desc strong { color: var(--text); }
+
+  /* ====== 响应式 ====== */
+  @media (max-width: 760px) {
+    .topbar { flex-wrap: wrap; padding: 10px 14px; gap: 8px; }
+    .topbar .topnav { order: 3; width: 100%; justify-content: flex-start; }
+    .read-mode { padding: 24px 14px 60px; }
+    .card { padding: 20px 18px; }
+    .hero-card { padding: 36px 20px; }
+    .stage { padding: 30px 14px; }
+    .stage .stage-card { padding: 24px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">📍 <span class="accent">中国的疆域</span> · 第一课时</div>
+  <nav class="topnav" id="topnav">
+    <a href="#sec-cover">封面</a>
+    <a href="#sec-intro">导引</a>
+    <a href="#sec-jingwei">经纬度</a>
+    <a href="#sec-hemi">半球</a>
+    <a href="#sec-sealand">海陆</a>
+    <a href="#sec-summary">小结</a>
+    <a href="#sec-exercise">练习</a>
+  </nav>
+  <button id="modeToggle" class="mode-toggle" type="button">
+    <span class="ico">📖</span><span class="lbl">阅读</span>
+  </button>
+</header>
+
+<main id="readMode" class="read-mode">
+
+  <!-- 封面 -->
+  <section id="sec-cover" class="section-group">
+    <div class="card hero-card">
+      <span class="badge">GEOGRAPHY · CHINA · 第八章</span>
+      <h1>中<span class="gold">国</span>的疆域</h1>
+      <h2>第 一 课 时 · 地 理 位 置</h2>
+      <div class="divider"></div>
+      <p class="byline">初中地理 · 八年级上册 · 互动课件</p>
+      <p class="byline">制作：小龍 🐉</p>
+    </div>
+  </section>
+
+  <!-- 课程导引 -->
+  <section id="sec-intro" class="section-group">
+    <div class="section-title"><span class="num">·</span>课程导引：从三个角度认识中国</div>
+    <div class="card">
+      <span class="tag">导引</span>
+      <h2>描述一个国家的地理位置，从哪几个角度入手？</h2>
+      <p>本节课我们从 <strong>三个角度</strong> 来认识中国在世界上的位置：</p>
+      <ul>
+        <li><strong>经纬度位置</strong> —— 用经纬网描述"在哪里"</li>
+        <li><strong>半球位置</strong> —— 看中国处在哪个半球</li>
+        <li><strong>海陆位置</strong> —— 看中国与大陆、海洋的关系</li>
+      </ul>
+      <p>三个角度层层递进：<span class="highlight">先用经纬网精确定位</span> → <span class="highlight">再看所属半球</span> → <span class="highlight">最后看海陆格局</span>。三者结合，才能完整描述一个国家的地理位置。</p>
+      <div class="think">
+        <span class="cloud">💭</span>
+        <div class="think-body">
+          <p><strong>想一想：</strong>假如只告诉你"中国位于亚洲"，你能想象出她的样子吗？为什么不够？</p>
+          <button class="reveal-btn" data-open="展开思路" data-close="收起思路">展开思路</button>
+          <div class="reveal-target think-ans" hidden>
+            <p>提示：亚洲有 48 个国家，只说"亚洲"无法体现中国的特殊性。地理位置的描述需要<strong>层层细化</strong>：所在大洲 → 经纬度范围 → 半球 → 海陆。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 经纬度位置 -->
+  <section id="sec-jingwei" class="section-group">
+    <div class="section-title"><span class="num">一</span>经纬度位置</div>
+
+    <!-- 1.1 描述方法 -->
+    <div class="card">
+      <span class="tag blue">1.1 描述方法</span>
+      <h2>用经纬网描述一个区域的位置</h2>
+      <p>地球表面有 <strong>经线</strong>（连接南北两极，指示南北方向）和 <strong>纬线</strong>（与赤道平行，指示东西方向），共同构成 <strong>经纬网</strong>，可以精确定位地球上的任何一个点。</p>
+      <ul>
+        <li><strong>北纬（N）</strong>：赤道以北，0°–90°N</li>
+        <li><strong>南纬（S）</strong>：赤道以南，0°–90°S</li>
+        <li><strong>东经（E）</strong>：本初子午线以东，0°–180°E</li>
+        <li><strong>西经（W）</strong>：本初子午线以西，0°–180°W</li>
+      </ul>
+      <p>要描述一个国家的经纬度位置，需要指出它 <strong>最北、最南、最东、最西</strong> 四个端点的经纬度，这就是"四至点"。</p>
+    </div>
+
+    <!-- 1.2 四至点+图 -->
+    <div class="card">
+      <span class="tag blue">1.2 四至点</span>
+      <h2>中国的四至点：最北、最南、最东、最西</h2>
+      <div class="four-corners">
+        <div class="corner-item">
+          <div class="corner-label">最北端</div>
+          <div class="corner-coord">53°N</div>
+          <div class="corner-place">黑龙江省漠河以北的<strong>黑龙江主航道中心线</strong></div>
+        </div>
+        <div class="corner-item">
+          <div class="corner-label">最南端</div>
+          <div class="corner-coord">4°N</div>
+          <div class="corner-place">南海南沙群岛中的<strong>曾母暗沙</strong></div>
+        </div>
+        <div class="corner-item">
+          <div class="corner-label">最东端</div>
+          <div class="corner-coord">135°E</div>
+          <div class="corner-place">黑龙江省<strong>黑龙江与乌苏里江主航道中心线的汇合处</strong></div>
+        </div>
+        <div class="corner-item">
+          <div class="corner-label">最西端</div>
+          <div class="corner-coord">73°E</div>
+          <div class="corner-place">新疆<strong>帕米尔高原</strong></div>
+        </div>
+      </div>
+      <div class="figure">
+        <img src="疆域_第一课时_media/img9.png" alt="中国版图与四至点" loading="lazy">
+        <p class="figure-cap">▲ 中国版图（教材配套地图）</p>
+      </div>
+      <p class="point-summary">📌 <strong>一句话记住：</strong>北<strong>53°N</strong>（漠河以北）、南<strong>4°N</strong>（曾母暗沙）、东<strong>135°E</strong>（黑龙江乌苏里江汇合处）、西<strong>73°E</strong>（帕米尔高原）。</p>
+    </div>
+
+    <!-- 1.3 纬度特点 -->
+    <div class="card">
+      <span class="tag blue">1.3 纬度特点</span>
+      <h2>南北跨纬度约 50°，相差 5500 千米</h2>
+      <p>中国最北端约 <strong>53°N</strong>，最南端约 <strong>4°N</strong>，南北跨纬度：</p>
+      <p style="text-align:center;font-size:22px;color:var(--gold);font-weight:700;letter-spacing:2px;margin:14px 0;">53° − 4° = <strong>约 50°</strong></p>
+      <p>纬度每相差 <strong>1°</strong>，实地距离约 <strong>110 千米</strong>。因此中国南北实地距离约为：</p>
+      <p style="text-align:center;font-size:22px;color:var(--gold);font-weight:700;letter-spacing:2px;margin:14px 0;">50 × 110 ≈ <strong>5500 千米</strong></p>
+      <ul>
+        <li>南北<strong>气候差异显著</strong>：当北方还是冰雪世界时，南海诸岛已春意盎然</li>
+        <li>跨越<strong>多个温度带</strong>：寒温带、中温带、暖温带、亚热带、热带</li>
+      </ul>
+    </div>
+
+    <!-- 1.4 经纬度评价 -->
+    <div class="card">
+      <span class="tag blue">1.4 经纬度评价</span>
+      <h2>经纬度位置带来的影响</h2>
+      <p>中国<strong>纬度位置优越</strong>，大部分位于 <strong>北温带</strong>（北回归线 23.5°N 穿过南部），<strong>小部分位于热带</strong>，<strong>没有寒带</strong>，气候条件多样，有利于农业发展。</p>
+      <h3>经度差异带来的影响</h3>
+      <p>中国东西跨经度约 <strong>62°</strong>（135°E − 73°E），跨越 <strong>5 个时区</strong>：</p>
+      <ul>
+        <li>东 5 区（135°E 附近）</li>
+        <li>东 6 区（120°E 附近，北京所在地）</li>
+        <li>东 7 区（105°E 附近）</li>
+        <li>东 8 区（90°E 附近）</li>
+        <li>东 9 区（75°E 附近）</li>
+      </ul>
+      <p>为方便统一，全国采用 <strong>北京时间（东 8 区，120°E）</strong> 作为标准时间。当北京早上 8 点时，帕米尔高原还是凌晨 5 点，<strong>东西时间差异大</strong>。</p>
+      <div class="think">
+        <span class="cloud">💭</span>
+        <div class="think-body">
+          <p><strong>想一想：</strong>新疆的售货员下午 3 点才吃午饭，这是为什么？</p>
+          <button class="reveal-btn" data-open="展开思路" data-close="收起思路">展开思路</button>
+          <div class="reveal-target think-ans" hidden>
+            <p>提示：新疆位于东 5、6 区，但全国统一用北京时间（东 8 区）。北京时间 15 点时，新疆当地地方时只有 12–13 点。所以新疆人"晚吃午饭"其实是按地方时算的，是生活习惯与<strong>行政时区</strong>的差异。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- 半球位置 -->
+  <section id="sec-hemi" class="section-group">
+    <div class="section-title"><span class="num">二</span>半球位置</div>
+
+    <!-- 2.1 描述方法 -->
+    <div class="card">
+      <span class="tag green">2.1 描述方法</span>
+      <h2>地球被两条线划成"四个半球"</h2>
+      <p>要描述一个国家位于哪个半球，需要先明确 <strong>半球的划分规则</strong>：</p>
+      <ul>
+        <li><strong>南北半球</strong>：以 <strong>赤道（0°纬线）</strong> 为界，北为北半球，南为南半球</li>
+        <li><strong>东西半球</strong>：以 <strong>20°W 和 160°E 组成的经线圈</strong> 为界（不是 0° 和 180°），东为东半球，西为西半球</li>
+      </ul>
+      <p class="point-summary">📌 <strong>为什么东西半球分界不是 0°/180°？</strong>为了让<strong>陆地尽量完整地落在同一个半球</strong>，避免把欧洲、非洲切碎。所以选 20°W 和 160°E 这条更"偏"的线。</p>
+    </div>
+
+    <!-- 2.2 中国半球位置 -->
+    <div class="card">
+      <span class="tag green">2.2 中国半球位置</span>
+      <h2>中国位于北半球 + 东半球</h2>
+      <div class="figure">
+        <img src="疆域_第一课时_media/img25.png" alt="东西半球图与中国位置" loading="lazy">
+        <p class="figure-cap">▲ 东西半球图（红色区域为东半球，可见中国位于东半球北部）</p>
+      </div>
+      <ul>
+        <li>中国 <strong>全部位于北半球</strong>（最南端 4°N 仍在赤道以北）</li>
+        <li>中国 <strong>全部位于东半球</strong>（最西端 73°E 仍在 20°W 以东）</li>
+      </ul>
+      <p><strong>判断步骤：</strong></p>
+      <ol>
+        <li>看纬度：南北端点都在赤道以北 → 北半球</li>
+        <li>看经度：东西端点都在 20°W 以东、160°E 以西 → 东半球</li>
+      </ol>
+    </div>
+
+  </section>
+
+  <!-- 海陆位置 -->
+  <section id="sec-sealand" class="section-group">
+    <div class="section-title"><span class="num">三</span>海陆位置</div>
+
+    <!-- 3.1 描述方法 -->
+    <div class="card">
+      <span class="tag">3.1 描述方法</span>
+      <h2>从海陆格局看中国</h2>
+      <p>海陆位置的描述需要回答三个问题：</p>
+      <ul>
+        <li>位于 <strong>哪个大陆</strong> 的哪个方位？</li>
+        <li>濒临 <strong>哪个海洋</strong>？是内陆国、岛国还是海陆兼备？</li>
+        <li><strong>邻国</strong> 情况（陆上 + 海上）？</li>
+      </ul>
+      <p class="point-summary">📌 <strong>三句话公式：</strong>位于 ×× 大陆 ×× 部，濒临 ×× 洋，是 ×× 类型国家（内陆国 / 岛国 / 海陆兼备）。</p>
+    </div>
+
+    <!-- 3.2 中国海陆位置 -->
+    <div class="card">
+      <span class="tag">3.2 中国海陆位置</span>
+      <h2>中国：亚欧大陆东部 · 太平洋西岸</h2>
+      <p>中国位于 <strong>亚洲</strong>（亚欧大陆）东部，<strong>太平洋</strong> 西岸，是 <strong>海陆兼备</strong> 的国家。</p>
+      <div class="figure">
+        <img src="疆域_第一课时_media/img12.jpeg" alt="世界地图与中国海陆位置" loading="lazy">
+        <p class="figure-cap">▲ 世界地图：可见中国东临太平洋，西接亚欧大陆腹地</p>
+      </div>
+
+      <h3>陆上邻国（14 个）</h3>
+      <p>从东北到西北，按顺时针方向：<strong>朝鲜、俄罗斯、蒙古、哈萨克斯坦、吉尔吉斯斯坦、塔吉克斯坦、阿富汗、巴基斯坦、印度、尼泊尔、不丹、缅甸、老挝、越南</strong>。</p>
+
+      <h3>海上邻国（6 个）</h3>
+      <p>由北到南：<strong>韩国、日本、菲律宾、马来西亚、文莱、印度尼西亚</strong>。</p>
+
+      <h3>濒临海域（自北向南）</h3>
+      <p><strong>渤海</strong>（内海）→ <strong>黄海</strong> → <strong>东海</strong> → <strong>南海</strong>（最大边缘海）。</p>
+    </div>
+
+    <!-- 3.3 海陆对比 -->
+    <div class="card">
+      <span class="tag">3.3 海陆对比</span>
+      <h2>三国对比：俄罗斯、日本、中国</h2>
+      <div class="compare-grid">
+        <div class="compare-cell">
+          <div class="country-flag">🇷🇺</div>
+          <div class="country-name">俄罗斯</div>
+          <div class="country-desc">
+            位于亚欧大陆北部，<strong>纬度高</strong>（北纬 41°–82°），濒临北冰洋、太平洋，<strong>沿海与内陆都有</strong>，但海洋条件差（北冰洋常年结冰）
+          </div>
+        </div>
+        <div class="compare-cell">
+          <div class="country-flag">🇯🇵</div>
+          <div class="country-name">日本</div>
+          <div class="country-desc">
+            太平洋西北部的 <strong>岛国</strong>，由四大岛 + 众多小岛组成，<strong>无陆上邻国</strong>，海岸线曲折，多优良港湾
+          </div>
+        </div>
+        <div class="compare-cell highlight-cell">
+          <div class="country-flag">🇨🇳</div>
+          <div class="country-name">中国</div>
+          <div class="country-desc">
+            亚欧大陆东部、太平洋西岸，<strong>海陆兼备</strong>：西部深入大陆腹地，东部面向太平洋
+          </div>
+        </div>
+      </div>
+      <p class="point-summary">📌 <strong>对比要点：</strong>俄罗斯 <strong>纬度高</strong>、日本 <strong>岛国无陆邻</strong>、中国 <strong>海陆兼备纬度适中</strong>。三国地理条件差异，决定了各自不同的发展路径。</p>
+    </div>
+
+    <!-- 3.4 海陆评价 -->
+    <div class="card">
+      <span class="tag">3.4 海陆评价</span>
+      <h2>海陆兼备的优势</h2>
+      <p>中国 <strong>海陆兼备</strong> 的位置带来三大优势：</p>
+      <ul>
+        <li><strong>东部沿海</strong>：多优良港湾，便于发展 <strong>海洋事业</strong>（航运、渔业、盐业）</li>
+        <li><strong>西部深入大陆</strong>：与多国接壤，便于发展 <strong>陆上贸易</strong>（古丝绸之路、现代亚欧大陆桥）</li>
+        <li><strong>海陆交互</strong>：受 <strong>夏季风</strong> 影响显著，雨热同期，有利于农业生产</li>
+      </ul>
+      <div class="think">
+        <span class="cloud">💭</span>
+        <div class="think-body">
+          <p><strong>想一想：</strong>同样是濒临海洋的国家，为什么日本渔业发达而蒙古以畜牧业为主？</p>
+          <button class="reveal-btn" data-open="展开思路" data-close="收起思路">展开思路</button>
+          <div class="reveal-target think-ans" hidden>
+            <p>提示：<strong>日本</strong>是岛国，四面环海，海岸线长 → 渔业 + 航运发达；<strong>蒙古</strong>是内陆国，深居亚欧大陆内部 → 海洋难以到达，只能发展畜牧业。要从<strong>是否濒临海洋、海岸线长短</strong>两个角度对比。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- 课堂小结 -->
+  <section id="sec-summary" class="section-group">
+    <div class="section-title"><span class="num">四</span>课堂小结</div>
+    <div class="card">
+      <span class="tag green">小结</span>
+      <h2>知识树：地理位置三大角度</h2>
+      <div class="tree">
+        <div class="tree-root">中 国 的 地 理 位 置</div>
+        <div class="tree-branches">
+          <div class="tree-branch">
+            <div class="branch-title">一、经纬度位置</div>
+            <div class="branch-detail">
+              北 53°N（漠河）<br>
+              南 4°N（曾母暗沙）<br>
+              东 135°E（汇合处）<br>
+              西 73°E（帕米尔）
+            </div>
+          </div>
+          <div class="tree-branch">
+            <div class="branch-title">二、半球位置</div>
+            <div class="branch-detail">
+              南北半球：北半球<br>
+              东西半球：东半球<br>
+              （20°W / 160°E 为界）
+            </div>
+          </div>
+          <div class="tree-branch">
+            <div class="branch-title">三、海陆位置</div>
+            <div class="branch-detail">
+              亚欧大陆东部<br>
+              太平洋西岸<br>
+              海陆兼备<br>
+              陆邻 14 · 海邻 6
+            </div>
+          </div>
+        </div>
+      </div>
+      <p>三角度层层递进：<span class="highlight">精确定位 → 半球定位 → 海陆定位</span>，完整描述中国在地球上的位置。</p>
+    </div>
+  </section>
+
+  <!-- 课后练习 -->
+  <section id="sec-exercise" class="section-group">
+    <div class="section-title"><span class="num">五</span>课后练习</div>
+
+    <!-- Q1 -->
+    <div class="card quiz-card" data-correct="B">
+      <span class="tag blue">练习 1</span>
+      <p class="q">1. 中国最北端位于（　　）</p>
+      <ul class="opts">
+        <li class="opt" data-opt="A">A. 黑龙江省漠河市</li>
+        <li class="opt" data-opt="B">B. 黑龙江省漠河以北的黑龙江主航道中心线上</li>
+        <li class="opt" data-opt="C">C. 黑龙江省哈尔滨</li>
+        <li class="opt" data-opt="D">D. 内蒙古自治区根河市</li>
+      </ul>
+      <button class="reveal-btn" data-open="展开答案" data-close="收起答案">展开答案</button>
+      <div class="reveal-target quiz-explain" hidden>
+        <strong>答案：B。</strong>中国最北端位于黑龙江省漠河以北的黑龙江主航道中心线上，纬度约 53°N。注意：不是漠河市区，漠河市区只是中国最北的<strong>城镇</strong>。
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="card quiz-card" data-correct="C">
+      <span class="tag blue">练习 2</span>
+      <p class="q">2. 关于中国半球位置的描述，正确的是（　　）</p>
+      <ul class="opts">
+        <li class="opt" data-opt="A">A. 中国跨南北两个半球</li>
+        <li class="opt" data-opt="B">B. 中国跨东西两个半球</li>
+        <li class="opt" data-opt="C">C. 中国位于北半球、东半球</li>
+        <li class="opt" data-opt="D">D. 中国位于南半球、西半球</li>
+      </ul>
+      <button class="reveal-btn" data-open="展开答案" data-close="收起答案">展开答案</button>
+      <div class="reveal-target quiz-explain" hidden>
+        <strong>答案：C。</strong>中国最南端 4°N 仍在赤道以北 → <strong>北半球</strong>；最西端 73°E 在 20°W 以东、160°E 以西 → <strong>东半球</strong>。中国全部位于北半球和东半球，没有跨半球。
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="card quiz-card" data-correct="D">
+      <span class="tag blue">练习 3</span>
+      <p class="q">3. 中国陆上邻国有（　　）个</p>
+      <ul class="opts">
+        <li class="opt" data-opt="A">A. 10 个</li>
+        <li class="opt" data-opt="B">B. 12 个</li>
+        <li class="opt" data-opt="C">C. 13 个</li>
+        <li class="opt" data-opt="D">D. 14 个</li>
+      </ul>
+      <button class="reveal-btn" data-open="展开答案" data-close="收起答案">展开答案</button>
+      <div class="reveal-target quiz-explain" hidden>
+        <strong>答案：D。</strong>中国陆上邻国 14 个：朝鲜、俄罗斯、蒙古、哈萨克斯坦、吉尔吉斯斯坦、塔吉克斯坦、阿富汗、巴基斯坦、印度、尼泊尔、不丹、缅甸、老挝、越南。海上邻国 6 个：韩、日、菲、马、文、印尼。
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="card quiz-card" data-correct="A">
+      <span class="tag blue">练习 4</span>
+      <p class="q">4. 下列描述，最能体现中国"海陆兼备"特点的是（　　）</p>
+      <ul class="opts">
+        <li class="opt" data-opt="A">A. 中国位于亚欧大陆东部、太平洋西岸，既有陆地国土又有海洋国土</li>
+        <li class="opt" data-opt="B">B. 中国陆地面积 960 万平方千米</li>
+        <li class="opt" data-opt="C">C. 中国南北跨纬度约 50°</li>
+        <li class="opt" data-opt="D">D. 中国位于北半球</li>
+      </ul>
+      <button class="reveal-btn" data-open="展开答案" data-close="收起答案">展开答案</button>
+      <div class="reveal-target quiz-explain" hidden>
+        <strong>答案：A。</strong>"海陆兼备"强调 <strong>既有大陆又有海洋</strong> 的双重身份。B 只说陆地面积；C 是经纬度特点；D 是半球位置。只有 A 同时点出"亚欧大陆"和"太平洋"，并明确"陆地国土+海洋国土"。
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<div id="stageMode" class="stage" hidden>
+  <div class="stage-card" id="stageCard">
+    <div class="stage-card-inner" id="stageCardInner">
+      <!-- 演示模式下的卡片内容由 JS 注入 -->
+    </div>
+  </div>
+  <div class="stage-controls">
+    <button id="prevBtn" type="button">← 上一张</button>
+    <span class="page-info" id="pageInfo">1 / 0</span>
+    <button id="nextBtn" type="button">下一张 →</button>
+    <button id="exitBtn" class="exit" type="button">退出 (Esc)</button>
+    <button id="fullscreenBtn" class="fullscreen" type="button" title="全屏演示 (F)" style="background:rgba(44,125,160,0.1);color:#2c7da0;border:1px solid rgba(44,125,160,0.3);padding:7px 16px;border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.2s ease;">⛶ 全屏</button>
+  </div>
+</div>
+
+<script>
+  // ====== 模式切换 ======
+  const toggle = document.getElementById('modeToggle');
+  const read = document.getElementById('readMode');
+  const stage = document.getElementById('stageMode');
+  const stageCard = document.getElementById('stageCard');
+  const stageCardInner = document.getElementById('stageCardInner');
+  const pageInfo = document.getElementById('pageInfo');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const exitBtn = document.getElementById('exitBtn');
+  const topnavLinks = document.querySelectorAll('#topnav a');
+
+  let mode = 'read';
+  let currentSlide = 0;
+  let slides = [];   // 演示模式下的卡片列表
+
+  function rebuildSlides() {
+    // 不依赖 read 变量，直接查 DOM（鲁棒性）
+    const readEl = document.getElementById('readMode') || document.querySelector('main');
+    if (readEl) {
+      slides = Array.from(readEl.querySelectorAll('.card'));
+    } else {
+      // fallback: 全文档查 .card，但必须是在 main 里的
+      slides = Array.from(document.querySelectorAll('.card'))
+        .filter(c => c.closest('main'));
+    }
+    console.log('[疆域] rebuildSlides: 收集到 ' + slides.length + ' 张幻灯片');
+  }
+
+  // 页面加载完就预先收集一次（避免点击 toggle 时未准备好）
+  function initSlidesEarly() {
+    rebuildSlides();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSlidesEarly);
+  } else {
+    initSlidesEarly();
+  }
+
+  function renderSlide(i) {
+    // 防御：如果 slides 仍然为空，再试一次 rebuildSlides
+    if (!slides.length) {
+      rebuildSlides();
+    }
+    if (!slides.length) {
+      // 仍然为空 → 显示调试信息而不是空白
+      stageCardInner.innerHTML =
+        '<div style="padding:40px;text-align:center;color:#b14545;">' +
+        '<h2>⚠ 未能加载幻灯片</h2>' +
+        '<p>请按 F12 打开控制台查看 [疆域] rebuildSlides 输出。</p>' +
+        '</div>';
+      pageInfo.textContent = '0 / 0';
+      return;
+    }
+    currentSlide = (i + slides.length) % slides.length;
+    const src = slides[currentSlide];
+    stageCardInner.innerHTML = src.outerHTML;
+    scaleSlideContent();
+    pageInfo.textContent = (currentSlide + 1) + ' / ' + slides.length;
+    // 同步展开答案按钮的事件
+    bindRevealButtons(stageCard);
+    bindQuiz(stageCard);
+    // 滚动到顶
+    stageCard.scrollTop = 0;
+  }
+
+  function setMode(next) {
+    mode = next;
+    if (mode === 'stage') {
+      rebuildSlides();
+      renderSlide(0);
+      read.hidden = true;
+      stage.hidden = false;
+      document.body.classList.add('stage-on');
+      toggle.innerHTML = '<span class="ico">🎬</span><span class="lbl">演示</span>';
+    } else {
+      read.hidden = false;
+      stage.hidden = true;
+      document.body.classList.remove('stage-on');
+      toggle.innerHTML = '<span class="ico">📖</span><span class="lbl">阅读</span>';
+    }
+  }
+
+  toggle.addEventListener('click', () => {
+    setMode(mode === 'read' ? 'stage' : 'read');
+  });
+
+  prevBtn.addEventListener('click', () => renderSlide(currentSlide - 1));
+  nextBtn.addEventListener('click', () => renderSlide(currentSlide + 1));
+  exitBtn.addEventListener('click', () => setMode('read'));
+
+  // ====== 幻灯片内容等比缩放 ======
+  // 说明：用 CSS zoom 而非 transform。
+  //   - zoom 重缩放 layout box，定位不会出现偏移
+  //   - zoom 后父容器 overflow:auto 能正常滚动
+  //   - 不用 flex 布局内外层级，避免 flex item 与 zoom 兼容问题
+  const DESIGN_W = 1180;  // 基准设计宽度（px），与 .stage-card-inner CSS 一致
+  function scaleSlideContent() {
+    if (!stageCardInner) return;
+    const availW = stageCard.clientWidth - 96;  // 96 = 48*2 左右 padding
+    const raw = availW / DESIGN_W;
+    // 不让 scale 小于 1：原文适合阅读，太小反而看不清
+    const scale = Math.max(1, raw);
+    stageCardInner.style.zoom = scale;
+  }
+  window.addEventListener('resize', scaleSlideContent);
+  document.addEventListener('fullscreenchange', scaleSlideContent);
+
+  // ====== 全屏功能 ======
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      fullscreenBtn.textContent = '⛶ 退出全屏';
+    } else {
+      document.exitFullscreen().catch(() => {});
+      fullscreenBtn.textContent = '⛶ 全屏';
+    }
+  }
+  fullscreenBtn.addEventListener('click', toggleFullscreen);
+  document.addEventListener('fullscreenchange', () => {
+    fullscreenBtn.textContent = document.fullscreenElement ? '⛶ 退出全屏' : '⛶ 全屏';
+    scaleSlideContent();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (mode === 'stage') {
+      if (e.key === 'ArrowLeft')  { renderSlide(currentSlide - 1); }
+      if (e.key === 'ArrowRight') { renderSlide(currentSlide + 1); }
+      if (e.key === 'Escape')     { setMode('read'); }
+      if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
+    }
+  });
+
+  // ====== 顶栏导航高亮 ======
+  function updateActiveNav() {
+    const sections = ['sec-cover','sec-intro','sec-jingwei','sec-hemi','sec-sealand','sec-summary','sec-exercise'];
+    let active = sections[0];
+    for (const id of sections) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (r.top <= 120) active = id;
+    }
+    topnavLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + active);
+    });
+  }
+  window.addEventListener('scroll', updateActiveNav);
+  updateActiveNav();
+
+  // ====== 答题 / 展开答案（占位，下一段实现） ======
+  function bindRevealButtons(root) {
+    root.querySelectorAll('.reveal-btn').forEach(btn => {
+      if (btn._bound) return;
+      btn._bound = true;
+      btn.addEventListener('click', () => {
+        const target = btn.parentElement.querySelector('.reveal-target');
+        if (target) {
+          target.hidden = !target.hidden;
+          btn.textContent = target.hidden ? btn.dataset.open || '展开答案' : btn.dataset.close || '收起';
+        }
+      });
+    });
+  }
+  function bindQuiz(root) {
+    root.querySelectorAll('.quiz-card').forEach(card => {
+      if (card._bound) return;
+      card._bound = true;
+      const correct = card.dataset.correct;
+      card.querySelectorAll('.opt').forEach(li => {
+        li.addEventListener('click', () => {
+          if (card.classList.contains('answered')) return;
+          card.classList.add('answered');
+          const chosen = li.dataset.opt;
+          if (chosen === correct) {
+            li.classList.add('opt-right');
+          } else {
+            li.classList.add('opt-wrong');
+            const right = card.querySelector('.opt[data-opt="' + correct + '"]');
+            if (right) right.classList.add('opt-right');
+          }
+        });
+      });
+    });
+  }
+  bindRevealButtons(read);
+  bindQuiz(read);
+</script>
+
+</body>
+</html>
