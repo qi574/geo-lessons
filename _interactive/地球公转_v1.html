@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>地球公转与四季 · 初中地理互动演示</title>
+<style>
+  :root {
+    --bg: #020810;
+    --panel-bg: rgba(3,8,18,0.92);
+    --border: rgba(255,255,255,0.10);
+    --text: #e2e8f0;
+    --dim: #94a3b8;
+    --gold: #fbbf24;
+    --blue: #38bdf8;
+    --red: #ff6b6b;
+    --orange: #ff8c42;
+    --green: #4ade80;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Microsoft YaHei','PingFang SC',sans-serif;
+    background: var(--bg); color: var(--text); overflow: hidden;
+    user-select: none; -webkit-user-select: none;
+  }
+  canvas { display:block; }
+
+  .panel {
+    position: fixed; z-index: 10;
+    background: var(--panel-bg); border:1px solid var(--border);
+    border-radius:12px; padding:12px 14px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* 左上：信息面板 */
+  #info-panel {
+    top: 16px; left: 16px;
+    min-width: 180px;
+  }
+  #info-panel .label { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; }
+  #info-panel .value { font-size:18px; font-weight:700; margin-bottom:6px; }
+  #info-panel .sub   { font-size:12px; color:var(--dim); }
+
+  /* 右上：控制面板 */
+  #ctrl-panel {
+    top: 16px; right: 16px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .btn {
+    background: rgba(255,255,255,0.06); color: var(--text);
+    border:1px solid var(--border); border-radius:8px;
+    padding:7px 12px; cursor:pointer; font-size:13px;
+    transition: all 0.2s; white-space:nowrap;
+  }
+  .btn:hover { background: rgba(255,255,255,0.14); }
+  .btn.active { background: var(--blue); color:#000; border-color:var(--blue); }
+
+  /* 底部：滑块面板 */
+  #bottom-panel {
+    bottom: 16px; left: 16px;
+    display:flex; flex-direction:column; gap:10px;
+    max-width: 420px;
+  }
+  #bottom-panel label { font-size:12px; color:var(--dim); }
+  input[type="range"] {
+    width:100%; height:6px; -webkit-appearance:none; appearance:none;
+    background: linear-gradient(90deg, #4a90d9, #fbbf24, #ff6b6b, #fbbf24, #4ade80, #fbbf24, #ff6b6b, #fbbf24, #4a90d9);
+    border-radius:3px; outline:none; cursor:pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:20px; height:20px;
+    border-radius:50%; background:#fff; border:2px solid var(--blue); cursor:pointer;
+  }
+  .tick-labels { display:flex; justify-content:space-between; font-size:10px; color:var(--dim); }
+  #season-info { font-size:13px; color:var(--gold); text-align:center; margin-top:4px; }
+
+  .btn-row { display:flex; gap:6px; }
+  .btn-sm { font-size:11px; padding:5px 8px; }
+</style>
+</head>
+<body>
+
+<!-- 左上：信息 -->
+<div class="panel" id="info-panel">
+  <div class="label">📅 日期</div>
+  <div class="value" id="info-date">6月21日</div>
+  <div class="sub" id="info-term">夏至 ☀️</div>
+  <div style="margin-top:8px;"></div>
+  <div class="label">🌞 太阳直射纬度</div>
+  <div class="value" id="info-decl">+23.5°</div>
+  <div class="sub" id="info-season">北半球 · 夏季</div>
+</div>
+
+<!-- 右上：控制 -->
+<div class="panel" id="ctrl-panel">
+  <button class="btn active" id="btn-auto" onclick="toggleOrbit()">⏸ 暂停公转</button>
+  <button class="btn" onclick="setView('top')">🔝 俯视轨道</button>
+  <button class="btn" onclick="setView('side')">👁 侧视</button>
+  <button class="btn" onclick="setView('earth')">🌏 地球视角</button>
+  <button class="btn" onclick="setView('reset')">🔄 重置</button>
+  <div class="btn-row" style="margin-top:4px;">
+    <button class="btn btn-sm" onclick="setDateDOY(80)">🌸 春分</button>
+    <button class="btn btn-sm" onclick="setDateDOY(172)">☀️ 夏至</button>
+    <button class="btn btn-sm" onclick="setDateDOY(266)">🍂 秋分</button>
+    <button class="btn btn-sm" onclick="setDateDOY(355)">❄️ 冬至</button>
+  </div>
+</div>
+
+<!-- 底部：滑块 -->
+<div class="panel" id="bottom-panel">
+  <div style="display:flex;justify-content:space-between;">
+    <label>📅 日期（拖动）</label>
+    <span style="font-size:12px;color:var(--gold);" id="doy-label">DOY 172</span>
+  </div>
+  <input type="range" id="date-slider" min="1" max="365" value="172" step="1">
+  <div class="tick-labels">
+    <span>1.1</span><span></span><span>春分<br>3.21</span><span></span><span>夏至<br>6.21</span><span></span><span>秋分<br>9.23</span><span></span><span>冬至<br>12.22</span><span></span><span>12.31</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+    <label style="margin:0;">⚡ 公转速度</label>
+    <input type="range" id="speed-slider" min="1" max="30" value="10" step="1" style="width:120px;background:var(--border);">
+    <span style="font-size:11px;color:var(--dim);" id="speed-label">10s/年</span>
+  </div>
+</div>
+
+<!-- Three.js import map -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ==================== 常量 ====================
+const AU = 40;                          // 轨道半径（视觉缩放）
+const SUN_R = 3;                        // 太阳半径（教学比例，实际约109:1）
+const EARTH_R = 3;                      // 地球半径（放大以便看清细节）
+const AXIAL_TILT = 23.5;               // 地轴倾角
+const EARTH_TEXTURE = 'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg';
+const DEG = Math.PI / 180;
+
+// 节气 DOY 映射
+const TERMS = {
+  spring: { doy: 80,  name: '春分', emoji: '🌸', decl: 0,    season: '春季', angle: 0 },
+  summer: { doy: 172, name: '夏至', emoji: '☀️', decl: 23.5, season: '夏季', angle: Math.PI/2 },
+  autumn: { doy: 266, name: '秋分', emoji: '🍂', decl: 0,    season: '秋季', angle: Math.PI },
+  winter: { doy: 355, name: '冬至', emoji: '❄️', decl: -23.5, season: '冬季', angle: Math.PI*1.5 },
+};
+
+// ==================== 场景 ====================
+const scene = new THREE.Scene();
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.5, 500);
+camera.position.set(20, 35, 60);
+camera.lookAt(0, 0, 0);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 15;
+controls.maxDistance = 200;
+controls.target.set(0, 0, 0);
+controls.update();
+
+// ==================== 灯光 ====================
+const ambientLight = new THREE.AmbientLight(0x1a1a3a, 1.8);
+scene.add(ambientLight);
+
+const sunLight = new THREE.PointLight(0xfff5e0, 800, 300, 0.5);
+scene.add(sunLight);
+
+// ==================== 星空 ====================
+function buildStars() {
+  const count = 3000;
+  const pos = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const r = 160 + Math.random() * 60;
+    pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+    pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    pos[i*3+2] = r * Math.cos(phi);
+    // 暖色/冷色混合
+    const warmth = Math.random();
+    colors[i*3]   = 0.7 + warmth * 0.3;
+    colors[i*3+1] = 0.7 + warmth * 0.2;
+    colors[i*3+2] = 0.8 + warmth * 0.2;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const mat = new THREE.PointsMaterial({ size: 0.35, vertexColors: true, transparent: true, opacity: 0.8 });
+  scene.add(new THREE.Points(geo, mat));
+}
+buildStars();
+
+// ==================== 太阳 ====================
+const sunGeo = new THREE.SphereGeometry(SUN_R, 64, 64);
+const sunMat = new THREE.MeshBasicMaterial({ color: 0xffdd66 });
+const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+scene.add(sunMesh);
+
+// 太阳光晕（多层 Sprite）
+function buildSunGlow() {
+  const glowTex = createGlowTexture();
+  for (let i = 0; i < 3; i++) {
+    const scale = (2.5 + i * 2) * SUN_R;
+    const mat = new THREE.SpriteMaterial({
+      map: glowTex,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      opacity: 0.25 - i * 0.07,
+      color: new THREE.Color().setHSL(0.13, 1, 0.5 + i * 0.15),
+    });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(scale, scale, 1);
+    sunMesh.add(sprite);
+  }
+}
+
+function createGlowTexture() {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  gradient.addColorStop(0, 'rgba(255,255,200,1)');
+  gradient.addColorStop(0.15, 'rgba(255,220,100,0.8)');
+  gradient.addColorStop(0.4, 'rgba(255,150,30,0.3)');
+  gradient.addColorStop(0.7, 'rgba(255,80,10,0.05)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
+}
+buildSunGlow();
+
+// ==================== 轨道环（直接在 XZ 平面）====================
+function buildOrbitRing() {
+  const pts = [];
+  for (let i = 0; i <= 256; i++) {
+    const a = (i / 256) * Math.PI * 2;
+    pts.push(new THREE.Vector3(Math.cos(a) * AU, 0, -Math.sin(a) * AU));
+  }
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineDashedMaterial({
+    color: 0x334466,
+    dashSize: 3,
+    gapSize: 2,
+  });
+  const ring = new THREE.Line(geo, mat);
+  ring.computeLineDistances();
+  scene.add(ring);
+}
+buildOrbitRing();
+
+// ==================== 节气标记 ====================
+function buildTermMarkers() {
+  const terms = [
+    { label: '🌸春分 3.21', angle: 0,            color: 0x4ade80 },
+    { label: '☀️夏至 6.21', angle: Math.PI/2,    color: 0x4ade80 },
+    { label: '🍂秋分 9.23', angle: Math.PI,      color: 0x4ade80 },
+    { label: '❄️冬至 12.22', angle: Math.PI*1.5, color: 0x4ade80 },
+  ];
+  
+  terms.forEach(t => {
+    const x = Math.cos(t.angle) * (AU + 2);
+    const z = -Math.sin(t.angle) * (AU + 2);
+    
+    // 标记球
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.6, 16, 16),
+      new THREE.MeshBasicMaterial({ color: t.color })
+    );
+    sphere.position.set(x, 0, z);
+    sphere.userData = { isTermMarker: true };
+    scene.add(sphere);
+    
+    // Sprite 标签
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px Microsoft YaHei';
+    ctx.textAlign = 'center';
+    ctx.fillText(t.label, 128, 38);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.minFilter = THREE.LinearFilter;
+    
+    const spriteMat = new THREE.SpriteMaterial({
+      map: tex, depthTest: false, depthWrite: false,
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.position.set(x, 2.2, z);
+    sprite.scale.set(8, 2, 1);
+    sprite.userData = { isTermMarker: true };
+    scene.add(sprite);
+  });
+}
+buildTermMarkers();
+
+// ==================== 地球组 ====================
+const earthGroup = new THREE.Group();
+scene.add(earthGroup);
+
+// 地轴组（倾斜23.5°→夏至北极朝太阳，绕X轴向-Z倾斜）
+const axisGroup = new THREE.Group();
+axisGroup.rotation.x = AXIAL_TILT * DEG;
+earthGroup.add(axisGroup);
+
+// 地轴杆
+const axisGeo = new THREE.CylinderGeometry(0.06, 0.06, EARTH_R * 4, 8);
+const axisMat = new THREE.MeshBasicMaterial({ color: 0x8899aa });
+const axisLine = new THREE.Mesh(axisGeo, axisMat);
+axisGroup.add(axisLine);
+
+// 南北极小标记
+const poleGeo = new THREE.SphereGeometry(0.18, 8, 8);
+const northPole = new THREE.Mesh(poleGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+northPole.position.y = EARTH_R * 2;
+axisGroup.add(northPole);
+const southPole = new THREE.Mesh(poleGeo, new THREE.MeshBasicMaterial({ color: 0x666666 }));
+southPole.position.y = -EARTH_R * 2;
+axisGroup.add(southPole);
+
+// 地球球体（放在 axisGroup 中，随轴倾斜）
+const earthGeo = new THREE.SphereGeometry(EARTH_R, 64, 64);
+const texLoader = new THREE.TextureLoader();
+const earthMat = new THREE.MeshStandardMaterial({
+  map: texLoader.load(EARTH_TEXTURE),
+  roughness: 0.6,
+  metalness: 0.1,
+});
+const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+axisGroup.add(earthMesh);
+
+// 大气层
+const atmoGeo = new THREE.SphereGeometry(EARTH_R * 1.03, 64, 64);
+const atmoMat = new THREE.MeshBasicMaterial({
+  color: 0x4488cc, transparent: true, opacity: 0.12, depthWrite: false,
+});
+axisGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
+
+// 北极自转方向箭头（在 earthMesh 上，跟随自转）
+function buildRotationArrow() {
+  const arrowY = EARTH_R * 2 + 1.5;
+  const arrowR = 2.2;
+  
+  // 3D 环形管（270°弧）
+  const curve = new THREE.EllipseCurve(0, 0, arrowR, arrowR, 0, Math.PI * 1.5, true, 0);
+  const arcPts = curve.getPoints(60).map(p => new THREE.Vector3(p.x, arrowY, p.y));
+  const tubeGeo = new THREE.TubeGeometry(
+    new THREE.CatmullRomCurve3(arcPts), 60, 0.1, 8, false
+  );
+  const tube = new THREE.Mesh(tubeGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  earthMesh.add(tube);
+  
+  // 箭头锥体
+  const tipPt = arcPts[arcPts.length - 1];
+  const prevPt = arcPts[arcPts.length - 2];
+  const dir = new THREE.Vector3().subVectors(tipPt, prevPt).normalize();
+  const cone = new THREE.Mesh(
+    new THREE.ConeGeometry(0.28, 0.9, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
+  );
+  cone.position.copy(tipPt);
+  cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+  earthMesh.add(cone);
+}
+buildRotationArrow();
+
+// 参考纬线（Line 虚线，dashSize/gapSize 正常比例）
+function addLatLine(lat, color, opacity, parent, dashed) {
+  const r = EARTH_R * Math.cos(lat * DEG);
+  const y = EARTH_R * Math.sin(lat * DEG);
+  const pts = [];
+  const segs = 200;
+  for (let i = 0; i <= segs; i++) {
+    const a = (i / segs) * Math.PI * 2;
+    pts.push(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r));
+  }
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = dashed
+    ? new THREE.LineDashedMaterial({ color, transparent: true, opacity, dashSize: 0.8, gapSize: 0.6 })
+    : new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+  const line = new THREE.Line(geo, mat);
+  if (dashed) line.computeLineDistances();
+  parent.add(line);
+}
+addLatLine(0,    0xffffff, 0.65, axisGroup, false); // 赤道 白色实线
+addLatLine(23.5,  0xff4444, 0.7,  axisGroup, true);  // 北回归线 红色虚线
+addLatLine(-23.5, 0xff4444, 0.7,  axisGroup, true);  // 南回归线 红色虚线
+addLatLine(66.5,  0xbbbbbb, 0.55, axisGroup, true);  // 北极圈 灰色虚线
+addLatLine(-66.5, 0xbbbbbb, 0.55, axisGroup, true);  // 南极圈 灰色虚线
+
+// 太阳直射点标记（在 tilted 空间中跟踪太阳方向）
+const subsolarMarker = new THREE.Mesh(
+  new THREE.SphereGeometry(0.25, 16, 16),
+  new THREE.MeshBasicMaterial({ color: 0xffdd00, transparent: true, opacity: 0.9 })
+);
+axisGroup.add(subsolarMarker);
+
+// 太阳光线指示（在 earthGroup 空间，不受倾斜影响）
+const rayGroup = new THREE.Group();
+earthGroup.add(rayGroup);
+
+// ==================== 状态 ====================
+let currentDOY = 172;           // 默认夏至
+let orbitSpeed = 10;           // 秒/年
+let isOrbiting = true;
+let selfRotationBase = 0;      // 自转角度累加
+let lastTime = performance.now();
+
+// ==================== 核心计算 ====================
+/** DOY → 轨道角度（弧度，0=春分位置，逆时针） */
+function doyToAngle(doy) {
+  // 春分 DOY=80 → angle=0
+  return ((doy - 80) / 365.25) * Math.PI * 2;
+}
+
+/** 轨道角度 → 太阳赤纬 */
+function angleToDeclination(angle) {
+  return AXIAL_TILT * Math.sin(angle); // 春分(0)=0°, 夏至(π/2)=+23.5°, 秋分(π)=0°, 冬至(3π/2)=-23.5°
+}
+
+/** DOY → 日期字符串 */
+function doyToDate(doy) {
+  const months = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const names = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+  let d = Math.round(doy);
+  if (d < 1) d = 1; if (d > 365) d = 365;
+  let m = 0;
+  while (m < 12 && d > months[m]) { d -= months[m]; m++; }
+  return `${names[m]}月${Math.round(d)}日`;
+}
+
+/** 判断节气 */
+function getTerm(doy, decl, angle) {
+  const dists = [
+    { key:'spring', diff: Math.abs(doy - 80) },
+    { key:'summer', diff: Math.abs(doy - 172) },
+    { key:'autumn', diff: Math.abs(doy - 266) },
+    { key:'winter', diff: Math.abs(doy - 355) },
+  ];
+  dists.sort((a,b) => a.diff - b.diff);
+  const nearest = dists[0];
+  if (nearest.diff < 5) return TERMS[nearest.key];
+  // 不在节气附近，根据赤纬 + cos(angle)趋势判断
+  const rising = Math.cos(angle) > 0; // decl上升→春季, decl下降→秋季
+  if (decl > 10) return { name: '春末', emoji: '🌿', season: '春末' };
+  if (decl > -10) return rising
+    ? { name: '春季', emoji: '🌸', season: '春季' }
+    : { name: '秋季', emoji: '🍂', season: '秋季' };
+  return { name: '秋末', emoji: '🍃', season: '秋末' };
+}
+
+/** 更新地球位置 + 直射点 */
+function updateEarthPosition() {
+  const angle = doyToAngle(currentDOY);
+  
+  // 地球在 XZ 平面绕太阳公转（逆时针，上北=+Z方向）
+  const x = Math.cos(angle) * AU;
+  const z = -Math.sin(angle) * AU; // 负号→逆时针
+  earthGroup.position.set(x, 0, z);
+  
+  // 地球自转（独立于公转速度，约1转/秒，视觉明显）
+  if (!selfRotationBase) selfRotationBase = 0;
+  selfRotationBase += 0.02; // 每帧递增
+  earthMesh.rotation.y = selfRotationBase;
+  
+  // 太阳在世界空间的方向
+  const sunWorld = new THREE.Vector3(-x, 0, -z).normalize();
+  
+  // 转换到 axisGroup 空间（axisGroup.rotation.x=+23.5°, 逆=-23.5°绕X）
+  const sunAxis = sunWorld.clone().applyAxisAngle(
+    new THREE.Vector3(1, 0, 0), -AXIAL_TILT * DEG
+  );
+  
+  // 直射点标记放在 axisGroup 空间中的地球表面
+  subsolarMarker.position.copy(
+    sunAxis.clone().multiplyScalar(EARTH_R * 1.02)
+  );
+  
+  // 太阳光线指示（从地球表面延伸到靠近太阳）
+  rayGroup.children.forEach(c => rayGroup.remove(c));
+  const rayStart = sunWorld.clone().multiplyScalar(EARTH_R * 1.05);
+  const rayEnd = sunWorld.clone().multiplyScalar(AU * 0.7);
+  const rayGeo = new THREE.BufferGeometry().setFromPoints([rayStart, rayEnd]);
+  const rayLine = new THREE.Line(rayGeo, new THREE.LineBasicMaterial({
+    color: 0xffdd00, transparent: true, opacity: 0.55,
+  }));
+  rayGroup.add(rayLine);
+}
+
+/** 更新信息面板 */
+function updateInfoPanel() {
+  const angle = doyToAngle(currentDOY);
+  const decl = angleToDeclination(angle);
+  const term = getTerm(currentDOY, decl, angle);
+  
+  document.getElementById('info-date').textContent = doyToDate(currentDOY);
+  document.getElementById('info-term').textContent = `${term.emoji || ''} ${term.name || ''}`;
+  document.getElementById('info-decl').textContent = 
+    `${decl >= 0 ? '+' : ''}${decl.toFixed(1)}°`;
+  
+  const rising = Math.cos(angle) > 0;
+  let season = '北半球 · ';
+  if (decl > 15) season += '夏季 ☀️';
+  else if (decl > 5) season += '春末 🌿';
+  else if (decl > -5) season += (rising ? '春季 🌸' : '秋季 🍂');
+  else if (decl > -15) season += '秋末 🍃';
+  else season += '冬季 ❄️';
+  document.getElementById('info-season').textContent = season;
+  
+  document.getElementById('doy-label').textContent = `DOY ${Math.round(currentDOY)}`;
+  document.getElementById('date-slider').value = Math.round(currentDOY);
+}
+
+/** 更新全部 */
+function updateAll() {
+  updateEarthPosition();
+  updateInfoPanel();
+}
+
+// ==================== 交互 ====================
+document.getElementById('date-slider').addEventListener('input', e => {
+  currentDOY = parseFloat(e.target.value);
+  updateAll();
+});
+
+document.getElementById('speed-slider').addEventListener('input', e => {
+  orbitSpeed = parseFloat(e.target.value);
+  document.getElementById('speed-label').textContent = `${orbitSpeed}s/年`;
+});
+
+// ==================== 全局函数 ====================
+function toggleOrbit() {
+  isOrbiting = !isOrbiting;
+  const btn = document.getElementById('btn-auto');
+  btn.textContent = isOrbiting ? '⏸ 暂停公转' : '▶️ 开始公转';
+  btn.classList.toggle('active', isOrbiting);
+}
+
+function setView(view) {
+  switch(view) {
+    case 'top':
+      controls.target.set(0, 0, 0);
+      camera.position.set(0, AU * 2.2, 0.1);
+      controls.update();
+      break;
+    case 'side':
+      controls.target.set(0, 0, 0);
+      camera.position.set(0, 10, AU * 1.8);
+      controls.update();
+      break;
+    case 'earth':
+      controls.target.copy(earthGroup.position);
+      camera.position.copy(earthGroup.position.clone().add(new THREE.Vector3(0, 10, EARTH_R * 10)));
+      controls.update();
+      break;
+    case 'reset':
+      controls.target.set(0, 0, 0);
+      camera.position.set(20, 35, 60);
+      controls.update();
+      break;
+  }
+}
+
+function setDateDOY(doy) {
+  currentDOY = doy;
+  updateAll();
+}
+
+// 暴露到全局
+window.toggleOrbit = toggleOrbit;
+window.setView = setView;
+window.setDateDOY = setDateDOY;
+
+// ==================== 动画循环 ====================
+function animate(now) {
+  requestAnimationFrame(animate);
+  
+  const dt = (now - lastTime) / 1000;
+  lastTime = now;
+  
+  // 自动公转
+  if (isOrbiting && dt > 0 && dt < 1) {
+    const doyPerSec = 365.25 / orbitSpeed;
+    currentDOY += doyPerSec * dt;
+    if (currentDOY > 365) currentDOY -= 365;
+    if (currentDOY < 1) currentDOY += 365;
+    updateAll();
+  }
+  
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// ==================== 启动 ====================
+updateAll();
+lastTime = performance.now();
+requestAnimationFrame(animate);
+
+// 响应式
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
