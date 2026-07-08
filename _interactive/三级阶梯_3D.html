@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中国地势三级阶梯 - 3D交互</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Microsoft YaHei', sans-serif; 
+      background: #0a1628; 
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+    #canvas-container { width: 100vw; height: 100vh; }
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(10, 22, 40, 0.9);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 320px;
+      backdrop-filter: blur(10px);
+    }
+    #info h2 { 
+      font-size: 18px; 
+      margin-bottom: 10px; 
+      color: #f1f5f9;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 8px;
+    }
+    #info p { font-size: 13px; line-height: 1.6; color: #94a3b8; margin-bottom: 6px; }
+    #info .highlight { color: #38bdf8; font-weight: bold; }
+    #legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(10, 22, 40, 0.9);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 14px 18px;
+      backdrop-filter: blur(10px);
+    }
+    #legend h3 { font-size: 14px; margin-bottom: 10px; color: #f1f5f9; }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 7px;
+      font-size: 13px;
+    }
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    #controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(10, 22, 40, 0.9);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 14px 18px;
+      backdrop-filter: blur(10px);
+    }
+    #controls h3 { font-size: 14px; margin-bottom: 10px; color: #f1f5f9; }
+    .ctrl-btn {
+      display: block;
+      width: 100%;
+      padding: 7px 14px;
+      margin-bottom: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .ctrl-btn:hover {
+      background: rgba(56, 189, 248, 0.3);
+    }
+    #detail {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      background: rgba(10, 22, 40, 0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 300px;
+      backdrop-filter: blur(10px);
+      display: none;
+    }
+    #detail.active { display: block; }
+    #detail h3 { font-size: 16px; margin-bottom: 8px; color: #38bdf8; }
+    #detail p { font-size: 13px; color: #94a3b8; line-height: 1.7; }
+    #detail .elevation { font-size: 24px; font-weight: bold; color: #fbbf24; margin: 6px 0; }
+    #tooltip {
+      position: absolute;
+      background: rgba(10, 22, 40, 0.95);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #38bdf8;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  
+  <div id="info">
+    <h2>🌏 中国地势三级阶梯</h2>
+    <p>中国地势<strong>西高东低</strong>，呈三级阶梯状分布</p>
+    <p>🔄 <strong>拖动鼠标</strong>旋转视角 | <strong>滚轮</strong>缩放</p>
+    <p>📍 <strong>点击</strong>各阶梯查看详情</p>
+  </div>
+
+  <div id="legend">
+    <h3>海拔等级</h3>
+    <div class="legend-item">
+      <div class="legend-color" style="background:#8B6914"></div>
+      <span>第1级 · <span class="highlight">4500m</span> · 青藏高原</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background:#C4956A"></div>
+      <span>第2级 · <span class="highlight">1000-2000m</span> · 高原盆地</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background:#6B8E23"></div>
+      <span>第3级 · <span class="highlight">&lt;500m</span> · 平原丘陵</span>
+    </div>
+  </div>
+
+  <div id="controls">
+    <h3>视角切换</h3>
+    <button class="ctrl-btn" onclick="resetCamera()">🔄 重置视角</button>
+    <button class="ctrl-btn" onclick="viewTop()">⬇️ 俯视中国</button>
+    <button class="ctrl-btn" onclick="viewSide()">➡️ 侧视剖面</button>
+    <button class="ctrl-btn" onclick="view45()">↗️ 45度视角</button>
+  </div>
+
+  <div id="detail">
+    <h3 id="detail-name">阶梯名称</h3>
+    <div class="elevation" id="detail-elev">4500m</div>
+    <p id="detail-desc">描述文字</p>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // ============ 真实地理数据（来自Tavily搜索 + 维基百科）============
+    // 中国领土大致范围：经度73°E-135°E，纬度18°N-54°N
+    const CHINA = { minLon: 73, maxLon: 135, minLat: 18, maxLat: 54 };
+
+    // 三级阶梯数据（真实地理）
+    const STEPS = [
+      {
+        name: "第一级阶梯",
+        region: "青藏高原",
+        elevation: "4500米",
+        range: "海拔4000-5000米",
+        description: "世界屋脊，包含青藏高原和柴达木盆地。昆仑山-阿尔金山-祁连山-横断山脉构成北界。",
+        // 经纬度范围（简化多边形顶点）
+        polygon: [
+          [73, 40], [104, 40], [104, 25], [73, 25]  // 青藏高原范围
+        ],
+        // Three.js颜色
+        color: 0x8B6914,
+        // 在3D地图中的相对位置（0=西/左，1=东/右）
+        lonCenter: 88,
+        latCenter: 33,
+        // 高度（3D中放大显示）
+        height: 0.85,
+      },
+      {
+        name: "第二级阶梯",
+        region: "黄土高原 · 云贵高原 · 内蒙古高原",
+        elevation: "1250-2000米",
+        range: "海拔1000-2000米",
+        description: "包含黄土高原、云贵高原、内蒙古高原及塔里木盆地、四川盆地。大兴安岭-太行山-巫山-雪峰山是其东界。",
+        polygon: [
+          [100, 40], [114, 40], [114, 32], [100, 32]  // 黄土高原范围
+        ],
+        color: 0xC4956A,
+        lonCenter: 105,
+        latCenter: 36,
+        height: 0.4,
+      },
+      {
+        name: "第三级阶梯",
+        region: "东北平原 · 华北平原 · 长江中下游平原",
+        elevation: "<500米",
+        range: "海拔50-500米",
+        description: "包含东北平原、华北平原、长江中下游平原及东南丘陵。大兴安岭-太行山-巫山-雪峰山是其西界。",
+        polygon: [
+          [115, 50], [135, 50], [135, 25], [115, 25]  // 平原范围
+        ],
+        color: 0x6B8E23,
+        lonCenter: 120,
+        latCenter: 38,
+        height: 0.12,
+      }
+    ];
+
+    // ============ Three.js 场景 ============
+    let scene, camera, renderer, controls;
+    let stepMeshes = [];
+    let raycaster, mouse;
+    let hoveredMesh = null;
+
+    function init() {
+      const container = document.getElementById('canvas-container');
+      
+      // Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a1628);
+      scene.fog = new THREE.FogExp2(0x0a1628, 0.002);
+
+      // Camera
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+      camera.position.set(0, 60, 90);
+      camera.lookAt(0, 0, 0);
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // Raycaster
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      // Lights
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambient);
+      const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+      directional.position.set(30, 60, 40);
+      scene.add(directional);
+      const point = new THREE.PointLight(0x38bdf8, 0.4, 200);
+      point.position.set(-30, 30, -30);
+      scene.add(point);
+
+      // Grid
+      const grid = new THREE.GridHelper(120, 24, 0x1e3a5f, 0x1e3a5f);
+      grid.position.y = -0.1;
+      scene.add(grid);
+
+      // Build 3D terrain
+      buildTerrain();
+      buildConnections();
+      buildLabels();
+
+      // Simple orbit controls
+      setupControls();
+
+      // Events
+      window.addEventListener('resize', onResize);
+      renderer.domElement.addEventListener('mousemove', onMouseMove);
+      renderer.domElement.addEventListener('click', onClick);
+
+      animate();
+    }
+
+    function buildTerrain() {
+      STEPS.forEach((step, idx) => {
+        // 投影：将经纬度转换为3D坐标
+        // lon: 73→135 → -40→+40 (x)
+        // lat: 18→54 → -24→+24 (z)
+        const x = lonToX(step.lonCenter);
+        const z = latToZ(step.latCenter);
+        const y = step.height * 15; // 高度缩放
+
+        // 主地形块（用BoxGeometry模拟海拔差异）
+        const geo = new THREE.BoxGeometry(22, y * 2, 18);
+        const mat = new THREE.MeshPhongMaterial({
+          color: step.color,
+          transparent: true,
+          opacity: 0.88,
+          shininess: 30,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+        mesh.userData = { stepIndex: idx, type: 'step' };
+        scene.add(mesh);
+        stepMeshes.push(mesh);
+
+        // 顶部装饰（模拟高原面）
+        const topGeo = new THREE.BoxGeometry(21, 0.3, 17);
+        const topMat = new THREE.MeshPhongMaterial({
+          color: step.color,
+          transparent: true,
+          opacity: 0.95,
+        });
+        const topMesh = new THREE.Mesh(topGeo, topMat);
+        topMesh.position.set(x, y * 2 + 0.15, z);
+        topMesh.userData = { stepIndex: idx, type: 'top' };
+        scene.add(topMesh);
+        stepMeshes.push(topMesh);
+
+        // 边缘高光线
+        const edges = new THREE.EdgesGeometry(geo);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ 
+          color: 0xffffff, 
+          transparent: true, 
+          opacity: 0.15 
+        }));
+        line.position.copy(mesh.position);
+        scene.add(line);
+
+        // 底部光晕
+        const glowGeo = new THREE.BoxGeometry(23, 0.5, 19);
+        const glowMat = new THREE.MeshBasicMaterial({
+          color: step.color,
+          transparent: true,
+          opacity: 0.15,
+        });
+        const glow = new THREE.Mesh(glowGeo, glowMat);
+        glow.position.set(x, 0.25, z);
+        scene.add(glow);
+      });
+    }
+
+    function buildConnections() {
+      // 分界线：昆仑山-祁连山-横断山（第一/第二阶梯分界）
+      // 从约 73°E, 40°N 到 104°E, 25°N
+      const line1Points = [];
+      for (let lon = 73; lon <= 104; lon += 2) {
+        const lat = 40 - (lon - 73) * 15 / 31; // 线性插值
+        line1Points.push(new THREE.Vector3(lonToX(lon), 0.5, latToZ(lat)));
+      }
+      const line1Geo = new THREE.BufferGeometry().setFromPoints(line1Points);
+      const line1 = new THREE.Line(line1Geo, new THREE.LineBasicMaterial({ 
+        color: 0xff6b6b, transparent: true, opacity: 0.6 
+      }));
+      scene.add(line1);
+
+      // 分界线：大兴安岭-太行山-巫山-雪峰山（第二/第三阶梯分界）
+      const line2Points = [];
+      for (let lon = 115; lon <= 135; lon += 2) {
+        const lat = 50 - (lon - 115) * 20 / 20; // 50°N → 30°N
+        line2Points.push(new THREE.Vector3(lonToX(lon), 0.5, latToZ(lat)));
+      }
+      const line2Geo = new THREE.BufferGeometry().setFromPoints(line2Points);
+      const line2 = new THREE.Line(line2Geo, new THREE.LineBasicMaterial({ 
+        color: 0xff6b6b, transparent: true, opacity: 0.6 
+      }));
+      scene.add(line2);
+    }
+
+    function buildLabels() {
+      // 简化的CSS2DRenderer替代：直接用canvas纹理
+      STEPS.forEach(step => {
+        const x = lonToX(step.lonCenter);
+        const z = latToZ(step.latCenter);
+        const y = step.height * 30 + 5;
+        
+        // 创建文字精灵
+        const sprite = makeTextSprite(step.name, {
+          fontSize: 12,
+          fontColor: 'white',
+          bgColor: 'rgba(10,22,40,0.7)',
+          padding: 6,
+        });
+        sprite.position.set(x, y, z);
+        scene.add(sprite);
+      });
+    }
+
+    function makeTextSprite(text, opts) {
+      opts = opts || {};
+      const fontSize = opts.fontSize || 14;
+      const fontColor = opts.fontColor || '#ffffff';
+      const bgColor = opts.bgColor || 'rgba(0,0,0,0.5)';
+      const padding = opts.padding || 10;
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.font = `bold ${fontSize}px Microsoft YaHei`;
+      const metrics = ctx.measureText(text);
+      canvas.width = metrics.width + padding * 2;
+      canvas.height = fontSize * 1.8 + padding * 2;
+
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = fontColor;
+      ctx.font = `bold ${fontSize}px Microsoft YaHei`;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, padding, canvas.height / 2);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(8, 4, 1);
+      return sprite;
+    }
+
+    function lonToX(lon) {
+      return (lon - 104) * (80 / 62); // 104°E = 中心
+    }
+    function latToZ(lat) {
+      return (36 - lat) * (48 / 36); // 36°N = 中心
+    }
+
+    // ============ 交互控制 ============
+    let isDragging = false;
+    let prevMouse = { x: 0, y: 0 };
+    let cameraAngle = { theta: 0, phi: 1.2 };
+    let cameraDist = 90;
+    let targetPos = new THREE.Vector3(0, 10, 0);
+
+    function setupControls() {
+      const el = renderer.domElement;
+      el.addEventListener('mousedown', e => {
+        isDragging = true;
+        prevMouse = { x: e.clientX, y: e.clientY };
+      });
+      el.addEventListener('mouseup', () => { isDragging = false; });
+      el.addEventListener('mouseleave', () => { isDragging = false; });
+      el.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        const dx = e.clientX - prevMouse.x;
+        const dy = e.clientY - prevMouse.y;
+        cameraAngle.theta -= dx * 0.005;
+        cameraAngle.phi = Math.max(0.1, Math.min(1.57, cameraAngle.phi - dy * 0.005));
+        prevMouse = { x: e.clientX, y: e.clientY };
+      });
+      el.addEventListener('wheel', e => {
+        cameraDist = Math.max(30, Math.min(200, cameraDist + e.deltaY * 0.1));
+      });
+    }
+
+    function updateCamera() {
+      const x = targetPos.x + cameraDist * Math.sin(cameraAngle.phi) * Math.sin(cameraAngle.theta);
+      const y = targetPos.y + cameraDist * Math.cos(cameraAngle.phi);
+      const z = targetPos.z + cameraDist * Math.sin(cameraAngle.phi) * Math.cos(cameraAngle.theta);
+      camera.position.set(x, y, z);
+      camera.lookAt(targetPos);
+    }
+
+    function resetCamera() {
+      cameraAngle = { theta: 0, phi: 1.2 };
+      cameraDist = 90;
+      targetPos.set(0, 10, 0);
+    }
+    function viewTop() {
+      cameraAngle = { theta: 0, phi: 0.05 };
+      cameraDist = 80;
+    }
+    function viewSide() {
+      cameraAngle = { theta: 1.57, phi: 0.8 };
+      cameraDist = 80;
+    }
+    function view45() {
+      cameraAngle = { theta: 0.8, phi: 0.8 };
+      cameraDist = 75;
+    }
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function onMouseMove(e) {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(stepMeshes);
+      const tooltip = document.getElementById('tooltip');
+      if (hits.length > 0) {
+        const mesh = hits[0].object;
+        if (mesh.userData.type === 'step' || mesh.userData.type === 'top') {
+          const idx = mesh.userData.stepIndex;
+          tooltip.style.display = 'block';
+          tooltip.style.left = e.clientX + 15 + 'px';
+          tooltip.style.top = e.clientY + 15 + 'px';
+          tooltip.textContent = STEPS[idx].name;
+          renderer.domElement.style.cursor = 'pointer';
+          hoveredMesh = mesh;
+          return;
+        }
+      }
+      tooltip.style.display = 'none';
+      renderer.domElement.style.cursor = 'default';
+      hoveredMesh = null;
+    }
+
+    function onClick(e) {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(stepMeshes);
+      if (hits.length > 0) {
+        const mesh = hits[0].object;
+        const idx = mesh.userData.stepIndex;
+        const step = STEPS[idx];
+        document.getElementById('detail').classList.add('active');
+        document.getElementById('detail-name').textContent = step.name;
+        document.getElementById('detail-elev').textContent = step.elevation;
+        document.getElementById('detail-desc').textContent = step.description;
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      updateCamera();
+      // 悬浮高亮
+      if (hoveredMesh) {
+        hoveredMesh.material.opacity = 1.0;
+      }
+      stepMeshes.forEach(m => {
+        if (m !== hoveredMesh && m.userData.type !== 'top') {
+          m.material.opacity = 0.88;
+        }
+      });
+      renderer.render(scene, camera);
+    }
+
+    init();
+  </script>
+</body>
+</html>
