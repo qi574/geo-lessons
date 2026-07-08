@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>亚洲季风环流 · 教学交互</title>
+<style>
+:root {
+  --bg: #fefcf7;
+  --panel-bg: rgba(255, 251, 240, 0.95);
+  --border: #d4c5a8;
+  --text: #2c3e50;
+  --dim: #7a6f5d;
+  --ocean: #d4e8f0;
+  --land: #f5e9d4;
+  --coast: #7a8a99;
+  --country: #b5a896;
+  --summer: #d44a3a;
+  --winter: #2a6da0;
+  --high: #c0392b;
+  --low: #2563eb;
+  --jet: #d97706;
+  --equator: #333;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Microsoft YaHei','PingFang SC',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.title-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 48px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; z-index: 100;
+}
+.title-bar h1 { font-size: 16px; font-weight: 700; }
+.season-tag {
+  font-size: 13px; padding: 3px 12px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.season-tag.summer { color: var(--summer); border-color: var(--summer); }
+.season-tag.winter { color: var(--winter); border-color: var(--winter); }
+.map-container {
+  position: fixed;
+  top: 48px; left: 0; right: 300px; bottom: 140px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); overflow: hidden;
+}
+.map-svg { width: 100%; height: auto; max-width: 100%; max-height: 100%; }
+.map-svg .ocean { fill: var(--ocean); }
+.map-svg .land { fill: var(--land); stroke: var(--country); stroke-width: 0.4; }
+.map-svg .coast { fill: none; stroke: var(--coast); stroke-width: 0.3; }
+.map-svg .country-border { fill: none; stroke: var(--country); stroke-width: 0.3; stroke-dasharray: 1.5 1; }
+.map-svg .grid { fill: none; stroke: #bbb; stroke-width: 0.3; opacity: 0.45; }
+.map-svg .equator { stroke: #333; stroke-width: 1.2; opacity: 0.7; fill: none; }
+.map-svg .tropic { stroke: #777; stroke-width: 0.7; stroke-dasharray: 4 3; opacity: 0.6; fill: none; }
+.map-svg .lat-label { font-size: 8px; fill: var(--dim); }
+.map-svg .lon-label { font-size: 8px; fill: var(--dim); }
+.map-svg .tropic-label { font-size: 7px; fill: #888; font-style: italic; }
+.pressure-blob { stroke-width: 1; stroke-dasharray: 3 2; transition: opacity 0.5s; }
+.pressure-blob.H { fill: rgba(192, 57, 43, 0.12); stroke: var(--high); }
+.pressure-blob.L { fill: rgba(37, 99, 235, 0.12); stroke: var(--low); }
+.pressure-blob.weak { opacity: 0.5; }
+.wind-arrow {
+  fill: none; stroke-width: 2.5; stroke-linecap: round;
+  transition: opacity 0.6s, stroke-width 0.3s;
+  cursor: pointer;
+}
+.wind-arrow.summer { stroke: var(--summer); }
+.wind-arrow.winter { stroke: var(--winter); }
+.wind-arrow.jet { stroke: var(--jet); stroke-width: 3; }
+.wind-arrow.hidden { opacity: 0; pointer-events: none; }
+.wind-arrow.highlighted { stroke-width: 3.5; filter: drop-shadow(0 0 4px currentColor); }
+.wind-arrow.dimmed { opacity: 0.2; }
+.wind-label {
+  font-size: 10px; font-weight: 700;
+  text-anchor: middle; pointer-events: none;
+  transition: opacity 0.6s;
+  paint-order: stroke; stroke: #fff; stroke-width: 2.5; stroke-linejoin: round;
+}
+.wind-label.summer { fill: var(--summer); }
+.wind-label.winter { fill: var(--winter); }
+.wind-label.jet { fill: var(--jet); font-weight: 700; }
+.wind-label.hidden { opacity: 0; }
+.wind-label.dimmed { opacity: 0.2; transition: opacity 0.6s; }
+.wind-label.highlighted {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px currentColor);
+  transition: opacity 0.4s, filter 0.4s;
+}
+.wind-hitrect.dimmed { opacity: 0.2; transition: opacity 0.6s; }
+.wind-hitrect.highlighted { opacity: 1; transition: opacity 0.4s; }
+.info-panel {
+  position: fixed; top: 48px; right: 0; bottom: 140px;
+  width: 300px; background: var(--panel-bg);
+  border-left: 1px solid var(--border);
+  padding: 16px; overflow-y: auto; z-index: 50;
+}
+.info-panel h2 { font-size: 16px; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 6px; }
+.info-panel h3 { font-size: 14px; color: var(--dim); margin: 14px 0 8px; }
+.mechanism-box {
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px;
+  margin-bottom: 12px; font-size: 14px; line-height: 1.8;
+}
+.mechanism-box .formula { color: var(--dim); font-style: italic; font-size: 12px; margin-top: 6px; }
+.compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.compare-table th { background: rgba(212, 197, 168, 0.3); padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+.compare-table td { padding: 8px 10px; border-bottom: 1px solid rgba(212, 197, 168, 0.3); vertical-align: top; }
+.compare-table .label-col { color: var(--dim); font-weight: 600; width: 60px; }
+.compare-table .summer-col { color: var(--summer); }
+.compare-table .winter-col { color: var(--winter); }
+.monsoon-detail {
+  background: rgba(255,255,255,0.8);
+  border: 1px solid var(--summer);
+  border-radius: 8px; padding: 14px;
+  margin-bottom: 12px; font-size: 14px; line-height: 1.8;
+  display: none;
+}
+.monsoon-detail.active { display: block; }
+.monsoon-detail h4 { font-size: 15px; margin-bottom: 8px; color: var(--summer); }
+.monsoon-detail.winter { border-color: var(--winter); }
+.monsoon-detail.winter h4 { color: var(--winter); }
+.monsoon-detail.jet { border-color: var(--jet); }
+.monsoon-detail.jet h4 { color: var(--jet); }
+.control-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 140px;
+  background: var(--panel-bg); border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  padding: 0 24px; z-index: 100;
+}
+.btn {
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 8px 18px;
+  font-size: 13px; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.btn:hover { background: rgba(255,255,255,0.95); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn.primary { color: white; border: none; }
+.btn.primary.summer { background: var(--summer); }
+.btn.primary.winter { background: var(--winter); }
+.btn.primary.jet { background: var(--jet); color: #2c3e50; }
+.btn.active { box-shadow: 0 0 0 2px var(--text); }
+.btn-group { display: flex; gap: 8px; align-items: center; }
+.btn-label { font-size: 11px; color: var(--dim); margin-right: 4px; }
+.step-indicator {
+  position: fixed; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-bg); border: 1px solid var(--jet);
+  border-radius: 20px; padding: 6px 16px;
+  font-size: 13px; color: var(--jet);
+  z-index: 200; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+}
+.step-indicator.active { opacity: 1; }
+.step-indicator .step-num {
+  display: inline-block; width: 22px; height: 22px;
+  background: var(--jet); color: #2c3e50;
+  border-radius: 50%; text-align: center; line-height: 22px;
+  font-weight: 700; margin-right: 6px;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>🌏 亚洲季风环流</h1>
+  <span class="season-tag summer" id="season-tag">🌞 7月 · 夏季</span>
+</div>
+<div class="map-container">
+  <svg class="map-svg" id="map-svg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <marker id="arrow-summer" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 Z" fill="#d44a3a"/>
+      </marker>
+      <marker id="arrow-winter" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 Z" fill="#2a6da0"/>
+      </marker>
+      <marker id="arrow-jet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 Z" fill="#d97706"/>
+      </marker>
+      <clipPath id="land-clip"><rect x="0" y="0" width="1000" height="600"/></clipPath>
+    </defs>
+    <rect class="ocean" x="0" y="0" width="1000" height="600"/>
+    <g id="main-layer">
+      <g id="grid-layer"></g>
+      <line class="equator" id="equator-line" x1="0" y1="0" x2="1000" y2="0"/>
+      <g id="land-layer"></g>
+      <g id="pressure-layer"></g>
+      <g id="wind-layer"></g>
+    </g>
+    <g id="axis-labels"></g>
+  </svg>
+</div>
+<div class="info-panel" id="info-panel">
+  <h2>📖 季风环流原理</h2>
+  <div class="mechanism-box" id="mechanism-box"><div id="mechanism-content"></div></div>
+  <div class="monsoon-detail" id="monsoon-detail">
+    <h4 id="detail-title"></h4><div id="detail-content"></div>
+  </div>
+  <h3>⚡ 东亚季风 vs 南亚季风</h3>
+  <table class="compare-table">
+    <thead><tr><th></th><th class="summer-col">东亚季风</th><th class="winter-col">南亚季风</th></tr></thead>
+    <tbody>
+      <tr><td class="label-col">成因</td><td>海陆热力差异</td><td>海陆热力差异 + 气压带风带移动</td></tr>
+      <tr><td class="label-col">夏季风</td><td class="summer-col">东南风</td><td class="summer-col">西南风（跨赤道偏转）</td></tr>
+      <tr><td class="label-col">冬季风</td><td class="winter-col">西北风</td><td class="winter-col">东北风</td></tr>
+      <tr><td class="label-col">性质</td><td>温暖湿润</td><td>温暖湿润（夏）/ 干燥（冬）</td></tr>
+      <tr><td class="label-col">特点</td><td>雨热同期</td><td>干湿季分明</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="step-indicator" id="step-indicator">
+  <span class="step-num" id="step-num">1</span>
+  <span id="step-text">南印度洋东南信风</span>
+</div>
+<div class="control-bar">
+  <div class="btn-group">
+    <span class="btn-label">季节：</span>
+    <button class="btn primary summer active" id="btn-summer" onclick="setSeason('summer')">🌞 夏季（7月）</button>
+    <button class="btn primary winter" id="btn-winter" onclick="setSeason('winter')">❄️ 冬季（1月）</button>
+  </div>
+  <div class="btn-group">
+    <button class="btn primary jet" id="btn-equator" onclick="playCrossEquator()">▶ 跨赤道演示</button>
+  </div>
+  <div class="btn-group">
+    <button class="btn" onclick="reset()">🔄 重置</button>
+  </div>
+</div>
+<script src="_asia_v9_paths.js"></script>
+<script>
+// === 坐标转换: lon 40-200E x lat -45~60N -> viewBox 1000x600 ===
+function lonLat2xy(lon, lat) {
+  if (lon < 0) lon += 360;
+  let x = (lon - 40) * (1000 / 160);
+  let y = (60 - lat) * (600 / 105);
+  return [x, y];
+}
+
+// === 气压中心 ===
+const PRESSURE_CENTERS = {
+  summer: [
+    {name:'印度低压',type:'L',lon:70,lat:30,weak:false},
+    {name:'夏威夷高压',type:'H',lon:195,lat:30,weak:false},
+    {name:'南印度洋高压',type:'H',lon:75,lat:-30,weak:false},
+    {name:'澳大利亚高压',type:'H',lon:135,lat:-30,weak:false},
+  ],
+  winter: [
+    {name:'蒙古-西伯利亚高压',type:'H',lon:100,lat:50,weak:false},
+    {name:'阿留申低压',type:'L',lon:180,lat:52,weak:false},
+    {name:'澳大利亚低压',type:'L',lon:135,lat:-30,weak:true},
+  ]
+};
+
+// === 风向数据（2-4段连续箭头，沿路径排列） ===
+// 每条季风 = 多段独立短曲线箭头，首尾相接
+const WIND_ARROWS = {
+  summer: [
+    // 东亚东南季风：夏威夷高压→中国东南沿海，3段连续
+    {id:'ea-se-1', arrows:[
+      // 夏威夷高压南侧 → 先沿纬线西移 → 渐转西北 → 趋向中国
+      [[165,20],[157,21],[150,22]],
+      [[148,23],[140,26],[133,29]],
+      [[130,31],[126,33],[122,37]],
+    ], label:'东南季风',
+     detail:{cause:'海陆热力差异',source:'夏威夷高压',direction:'东南风',nature:'温暖湿润'}},
+    {id:'ea-se-2', arrows:[
+      // 西太平洋副高脊 → 弧线向西北偏北 → 趋向华南
+      [[132,10],[126,12],[120,15]],
+      [[118,17],[113,20],[107,24]],
+      [[105,26],[102,28],[100,30]],
+    ], label:'东南季风',
+     detail:{cause:'海陆热力差异',source:'西太平洋副高',direction:'东南风',nature:'温暖湿润'}},
+    // 南亚西南季风（索马里急流）：南印度洋高压→跨赤道→印度低压，4段连续
+    // 简洁路径：从南印度洋高压直线北上，跨赤道后略偏右
+    {id:'sa-sw-1', arrows:[
+      [[60,-28],[55,-18]],
+      [[54,-14],[52,-6]],
+      [[52,-2],[54,6]],
+      [[55,10],[60,18],[66,25]],
+    ], label:'西南季风', isJet:true,
+     detail:{cause:'跨赤道偏转+气压带移动',source:'南印度洋高压',direction:'西南风(索马里急流)',nature:'温暖湿润'}},
+    // 孟加拉湾西南季风：从赤道印度洋向NE吹入孟加拉湾，2段
+    {id:'sa-sw-2', arrows:[
+      // 从赤道附近印度洋向NE
+      [[78,-5],[80,2]],
+      // 跨赤道后偏转，进入孟加拉湾
+      [[81,5],[84,12]],
+      // 抵达孟加拉湾北部
+      [[86,15],[88,20]],
+    ], label:'西南季风',
+     detail:{cause:'跨赤道偏转',source:'赤道印度洋',direction:'西南风(孟加拉湾支)',nature:'温暖湿润'}},
+  ],
+  winter: [
+    // ① 东亚西北季风：蒙古高压顺时针东南辐散→太平洋
+    // 高压东侧顺时针→气流向东南→西北季风
+    {id:'ea-nw-1', arrows:[
+      [[110,43],[120,39]],
+      [[122,38],[135,35]],
+    ], label:'西北季风',
+     detail:{cause:'海陆热力差异·高压顺时针辐散',source:'蒙古-西伯利亚高压',direction:'西北风',nature:'寒冷干燥'}},
+    // ② 南亚东北季风：蒙古高压顺时针西南辐散→印度洋
+    // 高压南侧顺时针→气流向西南→东北季风
+    {id:'sa-ne-1', arrows:[
+      [[94,34],[88,25]],
+      [[86,22],[82,14]],
+    ], label:'东北季风',
+     detail:{cause:'海陆热力差异·高压顺时针辐散',source:'蒙古-西伯利亚高压',direction:'东北风',nature:'干燥'}},
+    // ③ 沿海南下：高压东南侧顺时针向南辐散→南海
+    // 高压东偏南侧→沿中国东部海岸线南下
+    {id:'ea-s-1', arrows:[
+      [[107,42],[110,35]],
+      [[111,32],[113,25]],
+      [[114,22],[115,16]],
+    ], label:'西北季风',
+     detail:{cause:'海陆热力差异·高压顺时针辐散',source:'蒙古-西伯利亚高压',direction:'沿海南下偏北风',nature:'干冷'}},
+    // ④ 越赤道气流：从南海跨赤道→南半球左偏→澳大利亚夏季风
+    // 接③末端→跨赤道(110-112E)→南半球左偏(科里奥利力)→转为西北气流→澳洲
+    {id:'winter-cross', arrows:[
+      [[115,12],[114,7]],
+      [[113,5],[112,1]],
+      [[112,0],[111,-3]],
+      [[112,-5],[114,-9]],
+      [[115,-11],[118,-16]],
+    ], label:'跨赤道西北气流',
+     detail:{cause:'冬季风越赤道+南半球左偏',source:'东亚冬季风',direction:'北风跨赤道转西北',nature:'携带水汽影响澳大利亚夏季风'}, labelDy: 4},
+  ]
+};
+
+// === 机制说明 ===
+const MECHANISM = {
+  summer:{
+    title:'🌞 夏季(7月)— 海洋风向陆地',
+    content:'夏季陆地升温快，形成<b>低压</b>(印度低压)；海洋相对低温，形成<b>高压</b>(夏威夷高压、南印度洋高压)。风从海洋高压吹向陆地低压。',
+    formula:'c陆≈0.8×10³ J/(kg·K) < c海≈4.2×10³ J/(kg·K) → 陆地升温更快'
+  },
+  winter:{
+    title:'❄️ 冬季(1月)— 高压顺时针辐散',
+    content:'冬季陆地降温快，形成<b>蒙古-西伯利亚高压</b>。北半球高压<b>顺时针辐散</b>，气流分四支：①<b>东南</b>→东亚西北季风（太平洋）；②<b>西南</b>→南亚东北季风（印度洋）；③<b>正南</b>沿海南下偏北风（南海）；④<b>跨赤道</b>→南半球左偏转西北风（澳大利亚夏季风）。',
+    formula:'北半球高压顺时针辐散 → 风从高压流向四周低压区'
+  }
+};
+
+let currentSeason = 'summer';
+let isCrossEquatorPlaying = false;
+
+// === Cubic Bezier ===
+function pointsToCubicPath(points) {
+  if (points.length < 2) return '';
+  if (points.length === 2) return `M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)} L ${points[1][0].toFixed(1)} ${points[1][1].toFixed(1)}`;
+  let d = `M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i-1] || points[i], p1 = points[i], p2 = points[i+1], p3 = points[i+2] || points[i+1];
+    const cp1x = p1[0] + (p2[0] - p0[0]) / 6, cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const cp2x = p2[0] - (p3[0] - p1[0]) / 6, cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)} ${cp2x.toFixed(1)} ${cp2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+
+// === 渲染:陆地 ===
+function renderLand() {
+  const layer = document.getElementById('land-layer');
+  layer.innerHTML = '';
+  if (typeof ASIA_V9_PATHS === 'undefined') { console.warn('ASIA_V9_PATHS 未加载'); return false; }
+  const data = ASIA_V9_PATHS;
+  const LF = '#f5e9d4', CS = '#7a8a99', CB = '#b5a896';
+  if (data.land) data.land.forEach(d => {
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('class','land'); p.setAttribute('d', d);
+    p.setAttribute('fill', LF); p.setAttribute('stroke', CB); p.setAttribute('stroke-width','0.4');
+    p.style.fill = LF; p.setAttribute('clip-path','url(#land-clip)');
+    layer.appendChild(p);
+  });
+  if (data.coast) data.coast.forEach(d => {
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('class','coast'); p.setAttribute('d', d);
+    p.setAttribute('fill','none'); p.setAttribute('stroke', CS); p.setAttribute('stroke-width','0.3');
+    p.style.fill='none'; p.style.stroke=CS; p.setAttribute('clip-path','url(#land-clip)');
+    layer.appendChild(p);
+  });
+  if (data.countries) data.countries.forEach(c => {
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('class','country-border'); p.setAttribute('d', c.d);
+    p.setAttribute('fill','none'); p.setAttribute('stroke', CB); p.setAttribute('stroke-width','0.3');
+    p.style.fill='none'; p.style.stroke=CB; p.setAttribute('clip-path','url(#land-clip)');
+    layer.appendChild(p);
+  });
+  console.log(`陆地: ${data.countries?.length||0}国 / ${data.land?.length||0}陆块 / ${data.coast?.length||0}海岸`);
+  return true;
+}
+
+// === 渲染:网格+回归线 ===
+function renderGrid() {
+  const layer = document.getElementById('grid-layer');
+  layer.innerHTML = '';
+  for (let lat = -45; lat <= 60; lat += 15) {
+    const [, y] = lonLat2xy(40, lat);
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('class','grid'); l.setAttribute('x1',0); l.setAttribute('y1',y); l.setAttribute('x2',1000); l.setAttribute('y2',y);
+    layer.appendChild(l);
+  }
+  for (let lon = 40; lon <= 200; lon += 20) {
+    const [x] = lonLat2xy(lon, 0);
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('class','grid'); l.setAttribute('x1',x); l.setAttribute('y1',0); l.setAttribute('x2',x); l.setAttribute('y2',600);
+    layer.appendChild(l);
+  }
+  [{lat:23.5,label:'北回归线'},{lat:0,label:'赤道'},{lat:-23.5,label:'南回归线'}].forEach(t => {
+    const [, y] = lonLat2xy(40, t.lat);
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('class', t.lat === 0 ? 'equator' : 'tropic');
+    // 赤道用实线，纬线已经是实线，回归线用虚线
+    l.setAttribute('x1',0); l.setAttribute('y1',y); l.setAttribute('x2',1000); l.setAttribute('y2',y);
+    layer.appendChild(l);
+    const tx = document.createElementNS('http://www.w3.org/2000/svg','text');
+    tx.setAttribute('class','tropic-label'); tx.setAttribute('x',994); tx.setAttribute('y',y-3); tx.setAttribute('text-anchor','end');
+    if (t.lat === 0) { tx.setAttribute('fill','#333'); tx.setAttribute('font-weight','800'); tx.setAttribute('font-size','9'); }
+    tx.textContent = t.label; layer.appendChild(tx);
+  });
+}
+
+// === 渲染:经纬度标签 ===
+function renderAxisLabels() {
+  const layer = document.getElementById('axis-labels');
+  layer.innerHTML = '';
+  for (let lat = -45; lat <= 60; lat += 15) {
+    const [, y] = lonLat2xy(40, lat);
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',4); t.setAttribute('y',y+3); t.setAttribute('class','lat-label'); t.textContent = lat + '°';
+    layer.appendChild(t);
+  }
+  for (let lon = 40; lon <= 200; lon += 20) {
+    const [x] = lonLat2xy(lon, 0);
+    const t1 = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t1.setAttribute('x',x); t1.setAttribute('y',10); t1.setAttribute('text-anchor','middle'); t1.setAttribute('class','lon-label'); t1.textContent = lon + '°E';
+    layer.appendChild(t1);
+    const t2 = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t2.setAttribute('x',x); t2.setAttribute('y',592); t2.setAttribute('text-anchor','middle'); t2.setAttribute('class','lon-label'); t2.textContent = lon + '°E';
+    layer.appendChild(t2);
+  }
+}
+
+// === 渲染:气压中心 ===
+function renderPressureCenters(season) {
+  const layer = document.getElementById('pressure-layer');
+  layer.innerHTML = '';
+  PRESSURE_CENTERS[season].forEach(c => {
+    const [x, y] = lonLat2xy(c.lon, c.lat);
+    const rx = c.weak ? 45 : 70, ry = c.weak ? 30 : 50;
+    const fc = c.type === 'H' ? 'rgba(192,57,43,0.12)' : 'rgba(37,99,235,0.12)';
+    const sc = c.type === 'H' ? '#c0392b' : '#2563eb';
+    const op = c.weak ? 0.5 : 0.8;
+    const blob = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    blob.setAttribute('cx',x); blob.setAttribute('cy',y); blob.setAttribute('rx',rx); blob.setAttribute('ry',ry);
+    blob.setAttribute('fill',fc); blob.setAttribute('stroke',sc); blob.setAttribute('stroke-width','1');
+    blob.setAttribute('stroke-dasharray','3 2'); blob.setAttribute('opacity',op);
+    layer.appendChild(blob);
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x',x); label.setAttribute('y',y); label.setAttribute('font-size','11'); label.setAttribute('font-weight','800');
+    label.setAttribute('text-anchor','middle'); label.setAttribute('dominant-baseline','central'); label.setAttribute('fill',sc);
+    label.textContent = c.type === 'H' ? '高气压' : '低气压';
+    layer.appendChild(label);
+    const name = document.createElementNS('http://www.w3.org/2000/svg','text');
+    name.setAttribute('x',x); name.setAttribute('y',y+ry+12); name.setAttribute('font-size','9'); name.setAttribute('font-weight','600');
+    name.setAttribute('text-anchor','middle'); name.setAttribute('fill','#2c3e50'); name.textContent = c.name;
+    layer.appendChild(name);
+  });
+}
+
+// === 渲染:风向箭头（2-4段连续短曲线箭头） ===
+function renderWindArrows(season) {
+  const layer = document.getElementById('wind-layer');
+  layer.innerHTML = '';
+  WIND_ARROWS[season].forEach(a => {
+    const markerId = a.isJet ? 'arrow-jet' : (season === 'summer' ? 'arrow-summer' : 'arrow-winter');
+    const cls = `wind-arrow ${season}${a.isJet ? ' jet' : ''}`;
+    // 每段独立绘制
+    a.arrows.forEach((seg, idx) => {
+      const points = seg.map(([lon, lat]) => lonLat2xy(lon, lat));
+      const d = pointsToCubicPath(points);
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('class', cls);
+      path.setAttribute('d', d);
+      path.setAttribute('marker-end', `url(#${markerId})`);
+      path.style.cursor = 'pointer';
+      path.setAttribute('data-group', a.id);
+      // 点击任何一段都显示详情
+      path.onclick = () => showMonsoonDetail(a);
+      // 第一段加 id 用于高亮
+      if (idx === 0) path.id = a.id;
+      layer.appendChild(path);
+    });
+    // 风名标签（放在整条路径中点）
+    const midSeg = a.arrows[Math.floor(a.arrows.length / 2)];
+    const midPoints = midSeg.map(([lon, lat]) => lonLat2xy(lon, lat));
+    const mid = midPoints[Math.floor(midPoints.length / 2)];
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('class', `wind-label ${season}${a.isJet ? ' jet' : ''}`);
+    label.setAttribute('x', mid[0]); label.setAttribute('y', mid[1] - 10 + (a.labelDy || 0));
+    label.textContent = a.label;
+    label.style.cursor = 'pointer';
+    label.setAttribute('pointer-events', 'all');
+    // 标签附近加透明rect扩大点击热区
+    const hitRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    hitRect.setAttribute('x', mid[0] - 40);
+    hitRect.setAttribute('y', mid[1] - 18 + (a.labelDy || 0));
+    hitRect.setAttribute('width', '80');
+    hitRect.setAttribute('height', '26');
+    hitRect.setAttribute('fill', 'transparent');
+    hitRect.setAttribute('class', 'wind-hitrect');
+    hitRect.style.cursor = 'pointer';
+    hitRect.setAttribute('data-group', a.id);
+    hitRect.onclick = () => showMonsoonDetail(a);
+    layer.appendChild(hitRect);
+    label.setAttribute('data-group', a.id);
+    label.onclick = () => showMonsoonDetail(a);
+    layer.appendChild(label);
+  });
+}
+
+// === 机制面板 ===
+function updateMechanism(season) {
+  const m = MECHANISM[season];
+  document.getElementById('mechanism-content').innerHTML = `<b>${m.title}</b><br>${m.content}<div class="formula">${m.formula}</div>`;
+}
+
+// === 季风详情(点击箭头 — 逐个点亮) ===
+function showMonsoonDetail(a) {
+  // 全部先dimmed（箭头+标签+点击矩形）
+  document.querySelectorAll('.wind-arrow, .wind-label, .wind-hitrect').forEach(el => {
+    el.classList.remove('highlighted');
+    el.classList.add('dimmed');
+  });
+  // 逐个点亮同组箭头+点击矩形
+  const groupSegs = document.querySelectorAll(`.wind-arrow[data-group="${a.id}"], .wind-hitrect[data-group="${a.id}"]`);
+  let delay = 0;
+  groupSegs.forEach((el, i) => {
+    setTimeout(() => {
+      el.classList.remove('dimmed');
+      el.classList.add('highlighted');
+    }, delay);
+    delay += 300;
+  });
+  // 最后点亮标签
+  setTimeout(() => {
+    const groupLabels = document.querySelectorAll(`.wind-label[data-group="${a.id}"]`);
+    groupLabels.forEach(el => {
+      el.classList.remove('dimmed');
+      el.classList.add('highlighted');
+    });
+  }, delay);
+  const detail = document.getElementById('monsoon-detail');
+  detail.className = 'monsoon-detail active ' + (a.isJet ? 'jet' : currentSeason);
+  document.getElementById('detail-title').textContent = a.label;
+  const d = a.detail;
+  document.getElementById('detail-content').innerHTML =
+    `<b>成因：</b>${d.cause}<br><b>源地：</b>${d.source}<br><b>风向：</b>${d.direction}<br><b>性质：</b>${d.nature}`;
+}
+
+// === 季节切换 ===
+function setSeason(season) {
+  if (currentSeason === season) return;
+  currentSeason = season;
+  const tag = document.getElementById('season-tag');
+  if (season === 'summer') { tag.textContent = '🌞 7月 · 夏季'; tag.className = 'season-tag summer'; }
+  else { tag.textContent = '❄️ 1月 · 冬季'; tag.className = 'season-tag winter'; }
+  document.getElementById('btn-summer').classList.toggle('active', season === 'summer');
+  document.getElementById('btn-winter').classList.toggle('active', season === 'winter');
+  // 隐藏详情
+  document.getElementById('monsoon-detail').classList.remove('active');
+  renderPressureCenters(season);
+  renderWindArrows(season);
+  updateMechanism(season);
+}
+
+// === 跨赤道分步演示（重新设计：突出风向转变过程） ===
+function playCrossEquator() {
+  if (isCrossEquatorPlaying) return;
+  if (currentSeason !== 'summer') setSeason('summer');
+  isCrossEquatorPlaying = true;
+
+  // 隐藏所有箭头和标签
+  document.querySelectorAll('.wind-arrow').forEach(a => a.classList.add('hidden'));
+  document.querySelectorAll('.wind-label').forEach(l => l.classList.add('hidden'));
+
+  const layer = document.getElementById('wind-layer');
+  const indicator = document.getElementById('step-indicator');
+  const stepNum = document.getElementById('step-num');
+  const stepText = document.getElementById('step-text');
+
+  // 路径分 5 段，每段代表风向转变的一个阶段
+  const segs = [
+    {pts:[[65,-28],[60,-22],[56,-16]], label:'东南信风', color:'#d97706', desc:'南印度洋高压吹出东南风'},
+    {pts:[[56,-16],[52,-10],[50,-4]], label:'接近赤道', color:'#e6920e', desc:'风向开始偏转'},
+    {pts:[[50,-4],[49,0],[49,4]], label:'跨赤道', color:'#f5a623', desc:'地转偏向力=0，风向暂未偏转'},
+    {pts:[[49,4],[50,10],[53,16]], label:'北半球偏转', color:'#e76f51', desc:'地转偏向力向右，风向渐转西南'},
+    {pts:[[53,16],[58,20],[65,24]], label:'西南季风', color:'#d44a3a', desc:'形成西南季风，到达印度低压'},
+  ];
+
+  let drawnPaths = [];
+
+  function showStep(i) {
+    if (i > segs.length) {
+      indicator.classList.remove('active');
+      setTimeout(() => {
+        drawnPaths.forEach(p => p.remove());
+        renderWindArrows(currentSeason);
+        isCrossEquatorPlaying = false;
+      }, 2000);
+      return;
+    }
+    if (i === 0) {
+      stepNum.textContent = '1';
+      stepText.textContent = segs[0].label + ' — ' + segs[0].desc;
+      indicator.classList.add('active');
+      const eq = document.getElementById('equator-line');
+      eq.style.strokeWidth = '2'; eq.style.opacity = '0.9';
+      setTimeout(() => showStep(1), 800);
+      return;
+    }
+    const seg = segs[i-1];
+    const points = seg.pts.map(([lon,lat]) => lonLat2xy(lon,lat));
+    const d = pointsToCubicPath(points);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('class','wind-arrow jet');
+    path.setAttribute('d', d);
+    path.setAttribute('stroke', seg.color);
+    path.setAttribute('marker-end','url(#arrow-jet)');
+    path.setAttribute('pathLength','100');
+    path.setAttribute('stroke-dasharray','100');
+    path.setAttribute('stroke-dashoffset','100');
+    path.style.transition = 'stroke-dashoffset 0.8s ease-in-out';
+    path.style.animation = 'none';
+    layer.appendChild(path);
+    drawnPaths.push(path);
+    requestAnimationFrame(() => path.setAttribute('stroke-dashoffset','0'));
+    stepNum.textContent = i;
+    stepText.textContent = i + ' ' + seg.label + ' — ' + seg.desc;
+    if (seg.label === '跨赤道') {
+      const eq = document.getElementById('equator-line');
+      eq.style.strokeWidth = '2.5'; eq.style.opacity = '1';
+      eq.style.transition = 'all 0.3s';
+      setTimeout(() => { eq.style.strokeWidth = '1.2'; eq.style.opacity = '0.7'; }, 1000);
+    }
+    const labelEl = document.createElementNS('http://www.w3.org/2000/svg','text');
+    const mid = points[Math.floor(points.length/2)];
+    labelEl.setAttribute('x', mid[0] + 8);
+    labelEl.setAttribute('y', mid[1] - 6);
+    labelEl.setAttribute('font-size','8');
+    labelEl.setAttribute('font-weight','700');
+    labelEl.setAttribute('fill', seg.color);
+    labelEl.setAttribute('stroke','#fff'); labelEl.setAttribute('stroke-width','2');
+    labelEl.setAttribute('paint-order','stroke');
+    labelEl.textContent = seg.label;
+    labelEl.style.opacity = '0';
+    labelEl.style.transition = 'opacity 0.5s';
+    layer.appendChild(labelEl);
+    drawnPaths.push(labelEl);
+    setTimeout(() => labelEl.style.opacity = '1', 400);
+    setTimeout(() => showStep(i + 1), 1800);
+  }
+  showStep(0);
+}
+
+// === 重置 ===
+function reset() {
+  isCrossEquatorPlaying = false;
+  document.getElementById('step-indicator').classList.remove('active');
+  document.getElementById('monsoon-detail').classList.remove('active');
+  document.querySelectorAll('.wind-arrow, .wind-label, .wind-hitrect').forEach(el => el.classList.remove('highlighted','dimmed'));
+  setSeason('summer');
+}
+
+// === SVG fit ===
+function fitMapSvg() {
+  const c = document.querySelector('.map-container');
+  const svg = document.querySelector('.map-svg');
+  if (!c || !svg) return;
+  const cw = c.clientWidth, ch = c.clientHeight;
+  if (cw <= 0 || ch <= 0) return;
+  const ratio = 1000 / 600;
+  let w, h;
+  if (cw / ch > ratio) { h = ch; w = ch * ratio; }
+  else { w = cw; h = cw / ratio; }
+  svg.style.width = w + 'px';
+  svg.style.height = h + 'px';
+}
+
+// === 初始化 ===
+function init() {
+  renderGrid();
+  renderAxisLabels();
+  renderLand();
+  renderPressureCenters('summer');
+  renderWindArrows('summer');
+  updateMechanism('summer');
+  fitMapSvg();
+  window.addEventListener('resize', fitMapSvg);
+  console.log('✅ 季风环流 v9 初始化完成');
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+
+window.setSeason = setSeason;
+window.playCrossEquator = playCrossEquator;
+window.reset = reset;
+window.showMonsoonDetail = showMonsoonDetail;
+</script>
+
+</body>
+</html>
